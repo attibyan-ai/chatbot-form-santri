@@ -128,7 +128,15 @@ async function startBot() {
         if (msg.fromMe) return;
 
         const chat = await msg.getChat();
-        if (chat.isGroup) return;
+        
+        // Cek apakah pesan berasal dari grup
+        if (chat.isGroup) {
+            const mentions = await msg.getMentions();
+            const isMentioned = mentions.some(contact => contact.isMe);
+            if (!isMentioned) {
+                return; // Abaikan pesan grup yang tidak me-mention bot
+            }
+        }
 
         // Fitur Anti-Spam (Rate Limiter)
         if (userCooldowns.has(msg.from)) {
@@ -151,7 +159,14 @@ async function startBot() {
             await msg.reply(text);
         };
 
-        const text = msg.body.trim();
+        let text = msg.body.trim();
+        
+        // Jika di grup, bersihkan teks dari "tag/mention" (@nomor_bot) agar tidak merusak format parsing
+        if (chat.isGroup && client.info && client.info.wid) {
+            const botNumber = client.info.wid.user;
+            text = text.replace(new RegExp(`@${botNumber}\\b`, 'g'), '').trim();
+        }
+
         const lines = text.split('\n').map(line => line.trim());
         
         if (text.toUpperCase() === 'LIST SANTRI') {
