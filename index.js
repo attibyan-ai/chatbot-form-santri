@@ -169,7 +169,9 @@ async function startBot() {
 
         const lines = text.split('\n').map(line => line.trim());
         
-        if (text.toUpperCase() === 'LIST SANTRI') {
+        // Pengecekan dibuat lebih fleksibel menggunakan includes
+        // agar walau ada sisa kata lain dari mention, tetap terdeteksi
+        if (text.toUpperCase().includes('LIST SANTRI')) {
             await replyHuman('Sedang mengambil daftar santri dari database, mohon tunggu sebentar...');
             const listText = await getListSantri();
             await replyHuman(listText);
