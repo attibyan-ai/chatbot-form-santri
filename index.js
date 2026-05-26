@@ -69,7 +69,16 @@ async function startBot() {
     }
 
     const puppeteerOptions = {
-        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Wajib untuk server Linux/Render/Termux
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process', // Sangat penting untuk Termux (Android)
+            '--disable-gpu'
+        ], // Wajib untuk server Linux/Render/Termux
     };
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
         puppeteerOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
