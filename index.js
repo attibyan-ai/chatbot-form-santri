@@ -68,11 +68,16 @@ async function startBot() {
         authStrategy = new LocalAuth();
     }
 
+    const puppeteerOptions = {
+        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Wajib untuk server Linux/Render/Termux
+    };
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        puppeteerOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
     const client = new Client({
         authStrategy: authStrategy,
-        puppeteer: {
-            args: ['--no-sandbox', '--disable-setuid-sandbox'], // Wajib untuk server Linux/Render
-        }
+        puppeteer: puppeteerOptions
     });
 
     client.on('qr', async (qr) => {
