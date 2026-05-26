@@ -201,15 +201,15 @@ async function startBot() {
                         await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
                     }
                 } else {
-                    await replyHuman('Format pengisian salah. Pastikan Anda menuliskan nama dan tanggal lahir setelah tanda titik dua (:).');
+                    if (!chat.isGroup) await replyHuman('Format pengisian salah. Pastikan Anda menuliskan nama dan tanggal lahir setelah tanda titik dua (:).');
                 }
             } else {
-                await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
+                if (!chat.isGroup) await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
             }
         } else if (text.toUpperCase().includes('NAMA LENGKAP') || text.toUpperCase().includes('TANGGAL LAHIR')) {
-             await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :" dan "Tanggal Lahir :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
+             if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :" dan "Tanggal Lahir :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
         } else {
-            await replyHuman('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
+            if (!chat.isGroup) await replyHuman('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
         }
     });
 
