@@ -40,4 +40,29 @@ async function saveSantriData(waktu, nama, tanggalLahir) {
   }
 }
 
-module.exports = { saveSantriData };
+async function getListSantri() {
+  try {
+    await doc.loadInfo();
+    const sheet = doc.sheetsByIndex[0];
+    const rows = await sheet.getRows();
+    
+    if (rows.length === 0) {
+      return "Belum ada santri yang terdaftar saat ini.";
+    }
+
+    let result = "*Daftar Santri PTQ At-Tibyan:*\n\n";
+    rows.forEach((row, index) => {
+      // Menyiasati struktur kolom: [Waktu, Nama, Tanggal Lahir]
+      const nama = row._rawData[1] || 'Anonim';
+      const tglLahir = row._rawData[2] || '-';
+      result += `${index + 1}. ${nama} (Lahir: ${tglLahir})\n`;
+    });
+    
+    return result.trim();
+  } catch (error) {
+    console.error("Error fetching data from spreadsheet:", error);
+    return "Maaf, terjadi kesalahan saat mengambil daftar santri.";
+  }
+}
+
+module.exports = { saveSantriData, getListSantri };

@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const express = require('express');
 const qrcodeTerminal = require('qrcode-terminal');
 const qrcode = require('qrcode');
-const { saveSantriData } = require('./sheets');
+const { saveSantriData, getListSantri } = require('./sheets');
 const path = require('path');
 require('dotenv').config();
 
@@ -123,6 +123,13 @@ async function startBot() {
         const text = msg.body.trim();
         const lines = text.split('\n').map(line => line.trim());
         
+        if (text.toUpperCase() === 'LIST SANTRI') {
+            msg.reply('Sedang mengambil daftar santri dari database, mohon tunggu sebentar...');
+            const listText = await getListSantri();
+            msg.reply(listText);
+            return;
+        }
+
         const namaLine = lines.find(line => line.toUpperCase().startsWith('NAMA LENGKAP'));
         const tglLine = lines.find(line => line.toUpperCase().startsWith('TANGGAL LAHIR'));
 
