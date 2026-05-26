@@ -121,27 +121,40 @@ async function startBot() {
         if (chat.isGroup) return;
 
         const text = msg.body.trim();
+        const lines = text.split('\n').map(line => line.trim());
         
-        if (text.toUpperCase().startsWith('DAFTAR#')) {
-            const parts = text.split('#');
-            if (parts.length === 3) {
-                const nama = parts[1].trim();
-                const tanggalLahir = parts[2].trim();
-                const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-                
-                msg.reply('Sedang memproses data Anda, mohon tunggu sebentar...');
-                
-                const success = await saveSantriData(waktu, nama, tanggalLahir);
-                if (success) {
-                    msg.reply(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}`);
+        const namaLine = lines.find(line => line.toUpperCase().startsWith('NAMA LENGKAP'));
+        const tglLine = lines.find(line => line.toUpperCase().startsWith('TANGGAL LAHIR'));
+
+        if (namaLine && tglLine) {
+            const namaParts = namaLine.split(':');
+            const tglParts = tglLine.split(':');
+
+            if (namaParts.length >= 2 && tglParts.length >= 2) {
+                const nama = namaParts.slice(1).join(':').trim();
+                const tanggalLahir = tglParts.slice(1).join(':').trim();
+
+                if (nama && tanggalLahir) {
+                    const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+                    
+                    msg.reply('Sedang memproses data Anda, mohon tunggu sebentar...');
+                    
+                    const success = await saveSantriData(waktu, nama, tanggalLahir);
+                    if (success) {
+                        msg.reply(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}`);
+                    } else {
+                        msg.reply('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
+                    }
                 } else {
-                    msg.reply('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
+                    msg.reply('Format pengisian salah. Pastikan Anda menuliskan nama dan tanggal lahir setelah tanda titik dua (:).');
                 }
             } else {
-                msg.reply('Format yang Anda masukkan salah. Pastikan formatnya adalah:\n*DAFTAR#Nama Lengkap#Tanggal Lahir*\n\nContoh:\n*DAFTAR#Ahmad Fulan#12-08-2005*');
+                msg.reply('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
             }
+        } else if (text.toUpperCase().includes('NAMA LENGKAP') || text.toUpperCase().includes('TANGGAL LAHIR')) {
+             msg.reply('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :" dan "Tanggal Lahir :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
         } else {
-            msg.reply('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\n*DAFTAR#Nama Lengkap#Tanggal Lahir*\n\nContoh:\n*DAFTAR#Ahmad Zulfikar#09-12-1996*');
+            msg.reply('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
         }
     });
 
