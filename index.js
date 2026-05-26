@@ -127,7 +127,7 @@ async function startBot() {
                 msg.reply('Format yang Anda masukkan salah. Pastikan formatnya adalah:\n*DAFTAR#Nama Lengkap#Tanggal Lahir*\n\nContoh:\n*DAFTAR#Ahmad Fulan#12-08-2005*');
             }
         } else {
-            msg.reply('Halo! Selamat datang di bot pendaftaran Santri.\n\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\n*DAFTAR#Nama Lengkap#Tanggal Lahir*\n\nContoh:\n*DAFTAR#Ahmad Fulan#12-08-2005*');
+            msg.reply('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\n*DAFTAR#Nama Lengkap#Tanggal Lahir*\n\nContoh:\n*DAFTAR#Ahmad Zulfikar#09-12-1996*');
         }
     });
 
