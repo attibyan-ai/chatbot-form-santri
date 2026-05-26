@@ -120,11 +120,27 @@ async function startBot() {
         console.log('Sesi WhatsApp berhasil dicadangkan ke MongoDB!');
     });
 
+    // Variabel untuk melacak user yang sedang dalam masa jeda (Anti-Spam)
+    const userCooldowns = new Set();
+    const COOLDOWN_TIME_MS = 3000; // Jeda 3 detik setiap balasan
+
     client.on('message', async (msg) => {
         if (msg.fromMe) return;
 
         const chat = await msg.getChat();
         if (chat.isGroup) return;
+
+        // Fitur Anti-Spam (Rate Limiter)
+        if (userCooldowns.has(msg.from)) {
+            console.log(`[Anti-Spam] Mengabaikan spam dari: ${msg.from}`);
+            return; // Abaikan pesan jika user spam
+        }
+
+        // Masukkan user ke daftar antrean cooldown
+        userCooldowns.add(msg.from);
+        setTimeout(() => {
+            userCooldowns.delete(msg.from); // Bebaskan user setelah 3 detik
+        }, COOLDOWN_TIME_MS);
 
         const text = msg.body.trim();
         const lines = text.split('\n').map(line => line.trim());
