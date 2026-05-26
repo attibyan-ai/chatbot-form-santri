@@ -142,13 +142,22 @@ async function startBot() {
             userCooldowns.delete(msg.from); // Bebaskan user setelah 3 detik
         }, COOLDOWN_TIME_MS);
 
+        // Helper untuk membalas dengan efek "sedang mengetik..." seperti manusia
+        const replyHuman = async (text) => {
+            await chat.sendStateTyping();
+            // Jeda acak antara 1,5 sampai 3 detik
+            const delay = Math.floor(Math.random() * 1500) + 1500;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            await msg.reply(text);
+        };
+
         const text = msg.body.trim();
         const lines = text.split('\n').map(line => line.trim());
         
         if (text.toUpperCase() === 'LIST SANTRI') {
-            msg.reply('Sedang mengambil daftar santri dari database, mohon tunggu sebentar...');
+            await replyHuman('Sedang mengambil daftar santri dari database, mohon tunggu sebentar...');
             const listText = await getListSantri();
-            msg.reply(listText);
+            await replyHuman(listText);
             return;
         }
 
@@ -166,24 +175,24 @@ async function startBot() {
                 if (nama && tanggalLahir) {
                     const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
                     
-                    msg.reply('Sedang memproses data Anda, mohon tunggu sebentar...');
+                    await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
                     
                     const success = await saveSantriData(waktu, nama, tanggalLahir);
                     if (success) {
-                        msg.reply(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}`);
+                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}`);
                     } else {
-                        msg.reply('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
+                        await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
                     }
                 } else {
-                    msg.reply('Format pengisian salah. Pastikan Anda menuliskan nama dan tanggal lahir setelah tanda titik dua (:).');
+                    await replyHuman('Format pengisian salah. Pastikan Anda menuliskan nama dan tanggal lahir setelah tanda titik dua (:).');
                 }
             } else {
-                msg.reply('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
+                await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
             }
         } else if (text.toUpperCase().includes('NAMA LENGKAP') || text.toUpperCase().includes('TANGGAL LAHIR')) {
-             msg.reply('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :" dan "Tanggal Lahir :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
+             await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :" dan "Tanggal Lahir :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
         } else {
-            msg.reply('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
+            await replyHuman('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
         }
     });
 
