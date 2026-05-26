@@ -178,6 +178,35 @@ async function startBot() {
             return;
         }
 
+        // Logika Pendaftaran Khusus Grup (Format Pendek: Nama, Tanggal Lahir)
+        if (chat.isGroup) {
+            if (!text) return; // Jika cuma mention kosong
+            
+            const parts = text.split(',');
+            if (parts.length === 2) {
+                const nama = parts[0].trim();
+                const tanggalLahir = parts[1].trim();
+
+                // Pastikan keduanya ada isinya
+                if (nama && tanggalLahir) {
+                    const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+                    
+                    await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
+                    
+                    const success = await saveSantriData(waktu, nama, tanggalLahir);
+                    if (success) {
+                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}`);
+                    } else {
+                        await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
+                    }
+                }
+            }
+            
+            // Karena di grup, kita akhiri proses di sini (diam jika format salah)
+            return;
+        }
+
+        // Logika Pendaftaran Khusus Jalur Pribadi (Japri) dengan Format Lengkap
         const namaLine = lines.find(line => line.toUpperCase().startsWith('NAMA LENGKAP'));
         const tglLine = lines.find(line => line.toUpperCase().startsWith('TANGGAL LAHIR'));
 
