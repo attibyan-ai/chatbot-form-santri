@@ -80,8 +80,14 @@ async function startBot() {
             '--disable-gpu'
         ], // Wajib untuk server Linux/Render/Termux
     };
+    
+    // Gunakan executable custom jika ada di environment variable
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
         puppeteerOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    } 
+    // Deteksi otomatis jika berjalan di dalam Termux Android (tanpa perlu export)
+    else if (process.env.PREFIX && process.env.PREFIX.includes('com.termux')) {
+        puppeteerOptions.executablePath = '/data/data/com.termux/files/usr/bin/chromium-browser';
     }
 
     const client = new Client({
