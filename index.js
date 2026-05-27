@@ -161,10 +161,10 @@ async function startBot() {
 
         let text = msg.body.trim();
         
-        // Jika di grup, bersihkan teks dari "tag/mention" (@nomor_bot) agar tidak merusak format parsing
-        if (chat.isGroup && client.info && client.info.wid) {
-            const botNumber = client.info.wid.user;
-            text = text.replace(new RegExp(`@${botNumber}\\b`, 'g'), '').trim();
+        // Jika di grup, bersihkan teks dari semua format "tag/mention" (@nomor_hp) 
+        // yang secara default disisipkan oleh WhatsApp agar nama tetap bersih
+        if (chat.isGroup) {
+            text = text.replace(/@\d+/g, '').trim();
         }
 
         const lines = text.split('\n').map(line => line.trim());
