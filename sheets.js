@@ -26,13 +26,13 @@ if (process.env.CREDENTIALS_PATH) {
 
 const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID, serviceAccountAuth);
 
-async function saveSantriData(waktu, nama, tanggalLahir) {
+async function saveSantriData(waktu, nama, tanggalLahir, alamat) {
   try {
     await doc.loadInfo(); // loads document properties and worksheets
     const sheet = doc.sheetsByIndex[0]; // first sheet
     
     // Menambahkan baris data menggunakan array
-    await sheet.addRow([waktu, nama, tanggalLahir]);
+    await sheet.addRow([waktu, nama, tanggalLahir, alamat]);
     return true;
   } catch (error) {
     console.error("Error saving data to spreadsheet:", error);
@@ -52,10 +52,11 @@ async function getListSantri() {
 
     let result = "*Daftar Santri PTQ At-Tibyan:*\n\n";
     rows.forEach((row, index) => {
-      // Menyiasati struktur kolom: [Waktu, Nama, Tanggal Lahir]
+      // Menyiasati struktur kolom: [Waktu, Nama, Tanggal Lahir, Alamat]
       const nama = row._rawData[1] || 'Anonim';
       const tglLahir = row._rawData[2] || '-';
-      result += `${index + 1}. ${nama} (Lahir: ${tglLahir})\n`;
+      const alamat = row._rawData[3] ? row._rawData[3] : '-';
+      result += `${index + 1}. ${nama} (Lahir: ${tglLahir}, Alamat: ${alamat})\n`;
     });
     
     return result.trim();

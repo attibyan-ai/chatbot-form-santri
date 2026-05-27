@@ -178,24 +178,25 @@ async function startBot() {
             return;
         }
 
-        // Logika Pendaftaran Khusus Grup (Format Pendek: Nama, Tanggal Lahir)
+        // Logika Pendaftaran Khusus Grup (Format Pendek: Nama, Tanggal Lahir, Alamat)
         if (chat.isGroup) {
             if (!text) return; // Jika cuma mention kosong
             
             const parts = text.split(',');
-            if (parts.length === 2) {
+            if (parts.length >= 3) {
                 const nama = parts[0].trim();
                 const tanggalLahir = parts[1].trim();
+                const alamat = parts.slice(2).join(',').trim(); // Gabung sisa jika alamat mengandung koma
 
-                // Pastikan keduanya ada isinya
-                if (nama && tanggalLahir) {
+                // Pastikan ketiganya ada isinya
+                if (nama && tanggalLahir && alamat) {
                     const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
                     
                     await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
                     
-                    const success = await saveSantriData(waktu, nama, tanggalLahir);
+                    const success = await saveSantriData(waktu, nama, tanggalLahir, alamat);
                     if (success) {
-                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}`);
+                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}\nAlamat: ${alamat}`);
                     } else {
                         await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
                     }
@@ -209,36 +210,39 @@ async function startBot() {
         // Logika Pendaftaran Khusus Jalur Pribadi (Japri) dengan Format Lengkap
         const namaLine = lines.find(line => line.toUpperCase().startsWith('NAMA LENGKAP'));
         const tglLine = lines.find(line => line.toUpperCase().startsWith('TANGGAL LAHIR'));
+        const alamatLine = lines.find(line => line.toUpperCase().startsWith('ALAMAT'));
 
-        if (namaLine && tglLine) {
+        if (namaLine && tglLine && alamatLine) {
             const namaParts = namaLine.split(':');
             const tglParts = tglLine.split(':');
+            const alamatParts = alamatLine.split(':');
 
-            if (namaParts.length >= 2 && tglParts.length >= 2) {
+            if (namaParts.length >= 2 && tglParts.length >= 2 && alamatParts.length >= 2) {
                 const nama = namaParts.slice(1).join(':').trim();
                 const tanggalLahir = tglParts.slice(1).join(':').trim();
+                const alamat = alamatParts.slice(1).join(':').trim();
 
-                if (nama && tanggalLahir) {
+                if (nama && tanggalLahir && alamat) {
                     const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
                     
                     await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
                     
-                    const success = await saveSantriData(waktu, nama, tanggalLahir);
+                    const success = await saveSantriData(waktu, nama, tanggalLahir, alamat);
                     if (success) {
-                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}`);
+                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}\nAlamat: ${alamat}`);
                     } else {
                         await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
                     }
                 } else {
-                    if (!chat.isGroup) await replyHuman('Format pengisian salah. Pastikan Anda menuliskan nama dan tanggal lahir setelah tanda titik dua (:).');
+                    if (!chat.isGroup) await replyHuman('Format pengisian salah. Pastikan Anda mengisi nama, tanggal lahir, dan alamat setelah tanda titik dua (:).');
                 }
             } else {
-                if (!chat.isGroup) await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
+                if (!chat.isGroup) await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
             }
-        } else if (text.toUpperCase().includes('NAMA LENGKAP') || text.toUpperCase().includes('TANGGAL LAHIR')) {
-             if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :" dan "Tanggal Lahir :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
+        } else if (text.toUpperCase().includes('NAMA LENGKAP') || text.toUpperCase().includes('TANGGAL LAHIR') || text.toUpperCase().includes('ALAMAT')) {
+             if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tanggal Lahir :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
         } else {
-            if (!chat.isGroup) await replyHuman('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996');
+            if (!chat.isGroup) await replyHuman('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \nAlamat : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
         }
     });
 
