@@ -61,7 +61,7 @@ async function chatWithAI(userMessage) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-chat-v3-0324:free',
+        model: 'openrouter/owl-alpha',
         messages: [
           {
             role: 'system',
