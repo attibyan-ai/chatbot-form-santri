@@ -4,18 +4,16 @@ const mongoose = require('mongoose');
 const express = require('express');
 const qrcodeTerminal = require('qrcode-terminal');
 const qrcode = require('qrcode');
-const { saveSantriData, getListSantri } = require('./sheets');
+const { saveSantriData, getListSantri, getSantriArray, getAbsensi, saveAbsensi, getHafalan, saveHafalan, getPembayaran, savePembayaran } = require('./sheets');
 const path = require('path');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Variabel untuk menyimpan base64 image dari QR code terbaru
 let currentQR = null;
 let isReady = false;
 
-// Endpoint pancingan untuk UptimeRobot agar Render tidak tertidur
 app.get('/', (req, res) => {
     if (isReady) {
         res.send('<h1>Bot WhatsApp Aktif dan Berjalan! 🟢</h1><p>Mesin ini dijaga agar tetap bangun oleh UptimeRobot.</p>');
@@ -24,7 +22,6 @@ app.get('/', (req, res) => {
     }
 });
 
-// Endpoint untuk menampilkan QR code di browser
 app.get('/qr', (req, res) => {
     if (isReady) {
         res.send('<h1>Bot sudah login! Tidak perlu scan QR lagi.</h1>');
@@ -48,16 +45,17 @@ app.listen(PORT, () => {
     console.log(`Server Express berjalan di port ${PORT} (Anti-sleep aktif)`);
 });
 
-// Inisialisasi Bot WhatsApp
+const userSessions = {};
+const ADMIN_NUMBER = '6285888892326@c.us';
+
 async function startBot() {
     let authStrategy;
 
-    // Cek apakah user menggunakan MongoDB untuk penyimpanan sesi permanen
     if (process.env.MONGODB_URI) {
         console.log('Menghubungkan ke MongoDB untuk sesi permanen...');
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('MongoDB terhubung!');
-        
+
         const store = new MongoStore({ mongoose: mongoose });
         authStrategy = new RemoteAuth({
             store: store,
@@ -70,23 +68,20 @@ async function startBot() {
 
     const puppeteerOptions = {
         args: [
-            '--no-sandbox', 
+            '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--single-process', // Sangat penting untuk Termux (Android)
+            '--single-process',
             '--disable-gpu'
-        ], // Wajib untuk server Linux/Render/Termux
+        ],
     };
-    
-    // Gunakan executable custom jika ada di environment variable
+
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
         puppeteerOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    } 
-    // Deteksi otomatis jika berjalan di dalam Termux Android (tanpa perlu export)
-    else if (process.env.PREFIX && process.env.PREFIX.includes('com.termux')) {
+    } else if (process.env.PREFIX && process.env.PREFIX.includes('com.termux')) {
         puppeteerOptions.executablePath = '/data/data/com.termux/files/usr/bin/chromium-browser';
     }
 
@@ -96,23 +91,19 @@ async function startBot() {
     });
 
     client.on('qr', async (qr) => {
-        // Tampilkan di terminal lokal
         qrcodeTerminal.generate(qr, { small: true });
         console.log('Silakan scan QR code di atas, atau buka URL web (http://localhost:' + PORT + '/qr) untuk scan.');
-        
-        // Simpan sebagai Base64 untuk ditampilkan di web (/qr)
         currentQR = await qrcode.toDataURL(qr);
-        
-        // Simpan juga ke file gambar untuk ditampilkan di obrolan Gemini (lokal)
+
         try {
-            const artifactPath = path.join('C:\\Users\\HP\\.gemini\\antigravity\\brain\\ec3493fe-3130-4323-bcc2-23ea0a23c993', 'qr-code-v2.png');
+            const artifactPath = path.join('C:\\Users\\hp_3R\\.gemini\\antigravity\\brain\\ec3493fe-3130-4323-bcc2-23ea0a23c993', 'qr-code-v2.png');
             await qrcode.toFile(artifactPath, qr);
-        } catch (err) {}
+        } catch (err) { }
     });
 
     client.on('ready', () => {
         isReady = true;
-        currentQR = null; // Hapus QR dari memori setelah login
+        currentQR = null;
         console.log('Bot WhatsApp sudah siap dan berjalan!');
     });
 
@@ -120,58 +111,189 @@ async function startBot() {
         console.log('Sesi WhatsApp berhasil dicadangkan ke MongoDB!');
     });
 
-    // Variabel untuk melacak user yang sedang dalam masa jeda (Anti-Spam)
     const userCooldowns = new Set();
-    const COOLDOWN_TIME_MS = 3000; // Jeda 3 detik setiap balasan
+    const COOLDOWN_TIME_MS = 3000;
 
     client.on('message', async (msg) => {
         if (msg.fromMe) return;
 
         const chat = await msg.getChat();
-        
-        // Cek apakah pesan berasal dari grup
+
         if (chat.isGroup) {
             const mentions = await msg.getMentions();
             const isMentioned = mentions.some(contact => contact.isMe);
             if (!isMentioned) {
-                return; // Abaikan pesan grup yang tidak me-mention bot
+                return;
             }
         }
 
-        // Fitur Anti-Spam (Rate Limiter)
         if (userCooldowns.has(msg.from)) {
             console.log(`[Anti-Spam] Mengabaikan spam dari: ${msg.from}`);
-            return; // Abaikan pesan jika user spam
+            return;
         }
 
-        // Masukkan user ke daftar antrean cooldown
         userCooldowns.add(msg.from);
         setTimeout(() => {
-            userCooldowns.delete(msg.from); // Bebaskan user setelah 3 detik
+            userCooldowns.delete(msg.from);
         }, COOLDOWN_TIME_MS);
 
-        // Helper untuk membalas dengan efek "sedang mengetik..." seperti manusia
         const replyHuman = async (text) => {
             await chat.sendStateTyping();
-            // Jeda acak antara 1,5 sampai 3 detik
             const delay = Math.floor(Math.random() * 1500) + 1500;
             await new Promise(resolve => setTimeout(resolve, delay));
             await msg.reply(text);
         };
 
         let text = msg.body.trim();
-        
-        // Jika di grup, bersihkan teks dari semua format "tag/mention" (@nomor_hp) 
-        // yang secara default disisipkan oleh WhatsApp agar nama tetap bersih
+
         if (chat.isGroup) {
             text = text.replace(/@\d+/g, '').trim();
         }
 
         const lines = text.split('\n').map(line => line.trim());
-        
-        // Pengecekan dibuat lebih fleksibel menggunakan includes
-        // agar walau ada sisa kata lain dari mention, tetap terdeteksi
-        if (text.toUpperCase().includes('LIST SANTRI')) {
+        const textUpper = text.toUpperCase();
+
+        // 1. CEK SESSION ADMIN (Alur Input Data)
+        if (msg.from === ADMIN_NUMBER && userSessions[msg.from]) {
+            const session = userSessions[msg.from];
+
+            if (textUpper === 'BATAL') {
+                delete userSessions[msg.from];
+                await replyHuman('Proses input dibatalkan.');
+                return;
+            }
+
+            if (session.step === 'WAIT_YA') {
+                if (textUpper === 'YA') {
+                    await replyHuman('Mengambil daftar santri, mohon tunggu...');
+                    const santriList = await getSantriArray();
+
+                    if (santriList.length === 0) {
+                        await replyHuman('Belum ada santri yang terdaftar. Pendaftaran santri harus dilakukan terlebih dahulu.');
+                        delete userSessions[msg.from];
+                        return;
+                    }
+
+                    let listText = `*PILIH SANTRI UNTUK INPUT ${session.action}*\nSilakan balas dengan angka nomor urut santri di bawah ini:\n\n`;
+                    santriList.forEach(s => {
+                        listText += `${s.index}. ${s.nama}\n`;
+                    });
+                    listText += `\nKetik *BATAL* untuk membatalkan.`;
+
+                    session.step = 'PILIH_SANTRI';
+                    session.santriList = santriList;
+
+                    await replyHuman(listText);
+                } else {
+                    delete userSessions[msg.from];
+                }
+                return;
+            }
+
+            if (session.step === 'PILIH_SANTRI') {
+                const num = parseInt(textUpper);
+                if (isNaN(num) || num < 1 || num > session.santriList.length) {
+                    await replyHuman('Nomor santri tidak valid. Silakan balas dengan nomor yang benar, atau ketik *BATAL* untuk membatalkan.');
+                    return;
+                }
+
+                const selectedSantri = session.santriList[num - 1];
+                session.selectedSantri = selectedSantri;
+                session.step = 'INPUT_DATA';
+
+                let promptText = '';
+                if (session.action === 'ABSENSI') promptText = `Silakan masukkan status absensi untuk *${selectedSantri.nama}* (contoh: Hadir/Sakit/Izin/Alfa):`;
+                else if (session.action === 'HAFALAN') promptText = `Silakan masukkan progres hafalan untuk *${selectedSantri.nama}* (contoh: Juz 30 Surat An-Naba):`;
+                else if (session.action === 'PEMBAYARAN') promptText = `Silakan masukkan nominal pembayaran untuk *${selectedSantri.nama}* (contoh: 500000):`;
+
+                await replyHuman(promptText);
+                return;
+            }
+
+            if (session.step === 'INPUT_DATA') {
+                const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+                const nama = session.selectedSantri.nama;
+
+                await replyHuman('Sedang menyimpan data, mohon tunggu...');
+
+                let success = false;
+                if (session.action === 'ABSENSI') {
+                    success = await saveAbsensi(waktu, nama, text);
+                } else if (session.action === 'HAFALAN') {
+                    success = await saveHafalan(waktu, nama, text);
+                } else if (session.action === 'PEMBAYARAN') {
+                    success = await savePembayaran(waktu, nama, text);
+                }
+
+                if (success) {
+                    await replyHuman(`Berhasil menyimpan data ${session.action} untuk *${nama}*.`);
+                } else {
+                    await replyHuman(`Gagal menyimpan data ${session.action}. Silakan coba lagi nanti.`);
+                }
+
+                delete userSessions[msg.from];
+                return;
+            }
+        }
+
+        // 2. DETEKSI MENU UTAMA & SAPAAN
+        const greetings = ['MENU', 'PING', 'HALO', 'HELLO', 'P', 'ASSALAMUALAIKUM', 'INFO'];
+        if (greetings.includes(textUpper)) {
+            const menuText = `*MENU UTAMA BOT SANTRI*\n\n` +
+                `Silakan balas dengan *angka* menu yang ingin diakses:\n` +
+                `1. Profil Pesantren\n` +
+                `2. Kegiatan Pesantren\n` +
+                `3. Informasi Biaya Pesantren\n` +
+                `4. Pendaftaran Santri\n` +
+                `5. Absensi Santri\n` +
+                `6. Progres Hafalan Santri\n` +
+                `7. Buku Catatan Pembayaran\n\n` +
+                `Balas dengan angka 1 - 7.`;
+
+            await replyHuman(menuText);
+            return;
+        }
+
+        // 3. LOGIKA PILIHAN MENU ANGKA
+        if (['1', '2', '3', '4', '5', '6', '7'].includes(textUpper)) {
+            switch (textUpper) {
+                case '1':
+                    await replyHuman(`*PROFIL PESANTREN PTQ AT-TIBYAN*\n\nPesantren Tahfidz Qur'an At-Tibyan adalah lembaga pendidikan yang berfokus pada tahfidz Al-Qur'an dan pembentukan akhlak mulia. Misi kami adalah mencetak generasi penghafal Qur'an yang berwawasan luas dan berbudi pekerti luhur.`);
+                    return;
+                case '2':
+                    await replyHuman(`*KEGIATAN PESANTREN*\n\nKegiatan Harian Santri:\n03:30 - Tahajud & Persiapan Subuh\n04:30 - Sholat Subuh Berjamaah & Zikir\n05:30 - Halaqah Tahfidz (Sesi 1)\n07:30 - Mandi & Sarapan\n08:00 - Sekolah Dasar/Menengah\n13:00 - Sholat Dzuhur & Istirahat\n15:30 - Sholat Ashar & Halaqah Tahfidz (Sesi 2)\n17:30 - Persiapan Maghrib & Makan Malam\n18:30 - Sholat Maghrib & Murojaah\n19:30 - Sholat Isya & Kajian Kitab\n21:00 - Istirahat Malam`);
+                    return;
+                case '3':
+                    await replyHuman(`*INFORMASI BIAYA PESANTREN*\n\n1. Uang Pendaftaran: Rp 250.000\n2. Uang Pangkal: Rp 3.000.000 (Bisa dicicil)\n3. SPP Bulanan: Rp 750.000 (Mencakup asrama, makan 3x sehari, dan pendidikan)\n4. Seragam: Rp 500.000\n\nUntuk detail lebih lanjut, silakan hubungi admin.`);
+                    return;
+                case '4':
+                    await replyHuman('Untuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \nAlamat : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
+                    return;
+                case '5':
+                case '6':
+                case '7':
+                    let typeName = '';
+                    let fetchFunc = null;
+                    if (textUpper === '5') { typeName = 'ABSENSI'; fetchFunc = getAbsensi; }
+                    if (textUpper === '6') { typeName = 'HAFALAN'; fetchFunc = getHafalan; }
+                    if (textUpper === '7') { typeName = 'PEMBAYARAN'; fetchFunc = getPembayaran; }
+
+                    if (msg.from === ADMIN_NUMBER) {
+                        await replyHuman(`Memuat data ${typeName}...`);
+                        const dataText = await fetchFunc();
+                        await replyHuman(`${dataText}\n\n*MODE ADMIN*\nApakah Anda ingin menginput data ${typeName} baru?\nBalas *YA* untuk input, atau abaikan pesan ini.`);
+                        userSessions[msg.from] = { action: typeName, step: 'WAIT_YA' };
+                    } else {
+                        await replyHuman(`Memuat data ${typeName}...`);
+                        const dataText = await fetchFunc();
+                        await replyHuman(dataText);
+                    }
+                    return;
+            }
+        }
+
+        // 4. LOGIKA LAMA (List Santri dan Pendaftaran Manual)
+        if (textUpper.includes('LIST SANTRI')) {
             await replyHuman('Sedang mengambil daftar santri dari database, mohon tunggu sebentar...');
             const listText = await getListSantri();
             await replyHuman(listText);
@@ -180,20 +302,19 @@ async function startBot() {
 
         // Logika Pendaftaran Khusus Grup (Format Pendek: Nama, Tanggal Lahir, Alamat)
         if (chat.isGroup) {
-            if (!text) return; // Jika cuma mention kosong
-            
+            if (!text) return;
+
             const parts = text.split(',');
             if (parts.length >= 3) {
                 const nama = parts[0].trim();
                 const tanggalLahir = parts[1].trim();
-                const alamat = parts.slice(2).join(',').trim(); // Gabung sisa jika alamat mengandung koma
+                const alamat = parts.slice(2).join(',').trim();
 
-                // Pastikan ketiganya ada isinya
                 if (nama && tanggalLahir && alamat) {
                     const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-                    
+
                     await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
-                    
+
                     const success = await saveSantriData(waktu, nama, tanggalLahir, alamat);
                     if (success) {
                         await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}\nAlamat: ${alamat}`);
@@ -202,8 +323,6 @@ async function startBot() {
                     }
                 }
             }
-            
-            // Karena di grup, kita akhiri proses di sini (diam jika format salah)
             return;
         }
 
@@ -224,9 +343,9 @@ async function startBot() {
 
                 if (nama && tanggalLahir && alamat) {
                     const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-                    
+
                     await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
-                    
+
                     const success = await saveSantriData(waktu, nama, tanggalLahir, alamat);
                     if (success) {
                         await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}\nAlamat: ${alamat}`);
@@ -239,10 +358,11 @@ async function startBot() {
             } else {
                 if (!chat.isGroup) await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
             }
-        } else if (text.toUpperCase().includes('NAMA LENGKAP') || text.toUpperCase().includes('TANGGAL LAHIR') || text.toUpperCase().includes('ALAMAT')) {
-             if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tanggal Lahir :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
+        } else if (textUpper.includes('NAMA LENGKAP') || textUpper.includes('TANGGAL LAHIR') || textUpper.includes('ALAMAT')) {
+            if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tanggal Lahir :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
         } else {
-            if (!chat.isGroup) await replyHuman('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\nUntuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \nAlamat : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
+            // Opsional: berikan petunjuk ketik MENU
+            if (!chat.isGroup) await replyHuman('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\n\nKetik *MENU* untuk melihat daftar informasi dan layanan pesantren.');
         }
     });
 
