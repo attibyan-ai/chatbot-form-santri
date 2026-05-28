@@ -121,18 +121,83 @@ async function saveAbsensi(waktu, nama, status) {
 
 async function getAbsensi() {
   try {
+    const santriArray = await getSantriArray();
+    if (santriArray.length === 0) return "Belum ada santri yang terdaftar.";
+
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['Absensi'];
-    if (!sheet) return "Belum ada data absensi.";
-    const rows = await sheet.getRows();
-    if (rows.length === 0) return "Belum ada data absensi saat ini.";
-    let result = "*Daftar Absensi Santri:*\n\n";
-    rows.forEach((row, index) => {
-      const waktu = row._rawData[0] || '-';
-      const nama = row._rawData[1] || 'Anonim';
-      const status = row._rawData[2] || '-';
-      result += `${index + 1}. ${nama} - ${status} (${waktu})\n`;
+    const rows = sheet ? await sheet.getRows() : [];
+
+    const now = new Date();
+    const todayFullStr = now.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    const todayDateStr = todayFullStr.split(',')[0].trim();
+    const todayParts = todayDateStr.split(/\D+/);
+    const currentMonth = todayParts[1];
+    const currentYear = todayParts[2];
+    
+    const monthNames = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    const monthName = monthNames[parseInt(currentMonth, 10)] || currentMonth;
+    const todayDisplay = `${todayParts[0]} ${monthName} ${currentYear}`;
+
+    let absenHariIni = {};
+    let absenBulanIni = {};
+
+    santriArray.forEach(s => {
+      absenHariIni[s.nama] = '';
+      absenBulanIni[s.nama] = { H: 0, S: 0, I: 0, A: 0 };
     });
+
+    rows.forEach(row => {
+      const waktu = row._rawData[0] || '';
+      const nama = row._rawData[1] || '';
+      const rawStatus = (row._rawData[2] || '').toUpperCase();
+      
+      if (!nama || waktu === '-' || rawStatus.includes('BARU MENDAFTAR')) return;
+      
+      const rowDateStr = waktu.split(',')[0].trim();
+      const rowParts = rowDateStr.split(/\D+/);
+      if (rowParts.length < 3) return;
+      
+      let statusSymbol = '';
+      if (rawStatus.startsWith('H')) statusSymbol = 'H';
+      else if (rawStatus.startsWith('S')) statusSymbol = 'S';
+      else if (rawStatus.startsWith('I')) statusSymbol = 'I';
+      else if (rawStatus.startsWith('A')) statusSymbol = 'A';
+      else if (rawStatus === '✓') statusSymbol = 'H';
+
+      if (!statusSymbol) return;
+
+      if (rowDateStr === todayDateStr) {
+        if (statusSymbol === 'H') absenHariIni[nama] = '✓';
+        else absenHariIni[nama] = statusSymbol;
+      }
+
+      if (rowParts[1] === currentMonth && rowParts[2] === currentYear) {
+        if (absenBulanIni[nama] !== undefined) {
+          absenBulanIni[nama][statusSymbol]++;
+        }
+      }
+    });
+
+    let result = `*Absen Hari Ini tgl ${todayDisplay}*\n`;
+    santriArray.forEach((s, idx) => {
+      const st = absenHariIni[s.nama];
+      result += `${idx + 1}. ${s.nama} ${st ? st : ''}\n`;
+    });
+
+    result += `\n*Absen Bulan Ini*\n`;
+    santriArray.forEach((s, idx) => {
+      const counts = absenBulanIni[s.nama];
+      let statStrs = [];
+      if (counts.H > 0) statStrs.push(`H : ${counts.H}`);
+      if (counts.S > 0) statStrs.push(`S : ${counts.S}`);
+      if (counts.I > 0) statStrs.push(`I : ${counts.I}`);
+      if (counts.A > 0) statStrs.push(`A : ${counts.A}`);
+      
+      let statStr = statStrs.length > 0 ? statStrs.join(', ') : '-';
+      result += `${idx + 1}. ${s.nama} ${statStr}\n`;
+    });
+
     return result.trim();
   } catch (error) {
     console.error("Error fetching absensi:", error);
