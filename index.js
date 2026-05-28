@@ -203,8 +203,8 @@ async function startBot() {
 
                 let promptText = '';
                 if (session.action === 'ABSENSI') promptText = `Silakan masukkan status absensi untuk *${selectedSantri.nama}* (Bisa disingkat: H / S / I / A):`;
-                else if (session.action === 'HAFALAN') promptText = `Silakan masukkan progres hafalan untuk *${selectedSantri.nama}* (contoh: Juz 30 Surat An-Naba):`;
-                else if (session.action === 'PEMBAYARAN') promptText = `Silakan masukkan nominal pembayaran untuk *${selectedSantri.nama}* (contoh: 500000):`;
+                else if (session.action === 'HAFALAN') promptText = `Silakan masukkan progres hafalan untuk *${selectedSantri.nama}* (Wajib cantumkan angka di akhir untuk rekap bulanan, contoh: An-Naba = 5):`;
+                else if (session.action === 'PEMBAYARAN') promptText = `Silakan masukkan nominal pembayaran untuk *${selectedSantri.nama}* (contoh: 350000):`;
 
                 await replyHuman(promptText);
                 return;
