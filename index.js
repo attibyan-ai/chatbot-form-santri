@@ -61,11 +61,11 @@ async function chatWithAI(userMessage) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'openrouter/owl-alpha',
+        model: 'deepseek/deepseek-chat-v3-0324:free',
         messages: [
           {
             role: 'system',
-            content: 'Kamu adalah asisten virtual Pesantren Tahfidz Quran At-Tibyan. Jawab dengan ramah, sopan, dan menggunakan bahasa Indonesia. Jika ditanya hal di luar konteks pesantren, tetap jawab dengan baik.'
+            content: 'Kamu adalah asisten AI yang cerdas dan ramah. Jawab semua pertanyaan dengan bahasa Indonesia yang baik dan informatif. Kamu bisa membahas topik apa saja.'
           },
           {
             role: 'user',
