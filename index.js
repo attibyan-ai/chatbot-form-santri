@@ -48,6 +48,47 @@ app.listen(PORT, () => {
 const userSessions = {};
 const ADMIN_NUMBERS = ['6285888892326@c.us', '628816604554@c.us'];
 
+// Chat AI via OpenRouter
+async function chatWithAI(userMessage) {
+  try {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) return 'Maaf, fitur AI belum dikonfigurasi oleh admin.';
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'openrouter/owl-alpha',
+        messages: [
+          {
+            role: 'system',
+            content: 'Kamu adalah asisten virtual Pesantren Tahfidz Quran At-Tibyan. Jawab dengan ramah, sopan, dan menggunakan bahasa Indonesia. Jika ditanya hal di luar konteks pesantren, tetap jawab dengan baik.'
+          },
+          {
+            role: 'user',
+            content: userMessage
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      return data.choices[0].message.content;
+    } else {
+      console.error('OpenRouter response error:', JSON.stringify(data));
+      return 'Maaf, AI sedang tidak bisa merespons saat ini. Silakan coba lagi nanti.';
+    }
+  } catch (error) {
+    console.error('Error calling OpenRouter:', error);
+    return 'Maaf, terjadi kesalahan saat menghubungi AI. Silakan coba lagi nanti.';
+  }
+}
+
 async function startBot() {
     let authStrategy;
 
@@ -154,6 +195,19 @@ async function startBot() {
         const textUpper = text.toUpperCase();
 
 
+        // CEK SESSION AI CHAT
+        if (userSessions[msg.from] && userSessions[msg.from].mode === 'AI_CHAT') {
+            if (textUpper === 'MENU' || textUpper === 'BATAL') {
+                delete userSessions[msg.from];
+                // Jangan return, biarkan jatuh ke logika MENU di bawah
+            } else {
+                await chat.sendStateTyping();
+                const aiReply = await chatWithAI(text);
+                await msg.reply(aiReply);
+                return;
+            }
+        }
+
         // 2. DETEKSI MENU UTAMA & SAPAAN
         const greetings = ['MENU', 'PING', 'HALO', 'HELLO', 'P', 'ASSALAMUALAIKUM', 'INFO'];
         if (greetings.includes(textUpper)) {
@@ -163,14 +217,15 @@ async function startBot() {
                 `2. Kegiatan Pesantren\n` +
                 `3. Informasi Biaya Pesantren\n` +
                 `4. Pendaftaran Santri\n` +
-                `5. Daftar Santri\n\n` +
-                `Balas dengan angka 1 - 5.`;
+                `5. Daftar Santri\n` +
+                `6. Chat dengan AI 🤖\n\n` +
+                `Balas dengan angka 1 - 6.`;
 
             await replyHuman(menuText);
             return;
         }
 
-        if (['1', '2', '3', '4', '5'].includes(textUpper)) {
+        if (['1', '2', '3', '4', '5', '6'].includes(textUpper)) {
             switch (textUpper) {
                 case '1':
                     await replyHuman(`*PROFIL PESANTREN PTQ AT-TIBYAN*\n\nPesantren Tahfidz Qur'an At-Tibyan adalah lembaga pendidikan yang berfokus pada tahfidz Al-Qur'an dan pembentukan akhlak mulia. Misi kami adalah mencetak generasi penghafal Qur'an yang berwawasan luas dan berbudi pekerti luhur.\n\n*Pendiri:* KH Abdur Rouf Al-Hafidz\n*Pengasuh Saat Ini:* KH Jaza Abdul Ghoni Al-Hafidz\n*Lokasi:* Desa Laren, Kec. Bumiayu, Kab. Brebes, Jawa Tengah`);
@@ -188,6 +243,10 @@ async function startBot() {
                     await replyHuman('Sedang mengambil daftar santri dari database, mohon tunggu sebentar...');
                     const listText = await getListSantri();
                     await replyHuman(listText);
+                    return;
+                case '6':
+                    userSessions[msg.from] = { mode: 'AI_CHAT' };
+                    await replyHuman(`🤖 *MODE CHAT AI AKTIF*\n\nAnda sekarang terhubung dengan asisten AI PTQ At-Tibyan. Silakan ketik pertanyaan apa saja!\n\nKetik *MENU* untuk kembali ke menu utama.`);
                     return;
             }
         }
