@@ -29,6 +29,22 @@ async function saveSantriData(waktu, nama, tanggalLahir, alamat) {
     await doc.loadInfo();
     const sheet = doc.sheetsByIndex[0];
     await sheet.addRow([waktu, nama, tanggalLahir, alamat]);
+
+    // Auto insert ke Tab 2 (Absensi)
+    let sheetAbsen = doc.sheetsByIndex[1];
+    if (!sheetAbsen) sheetAbsen = await doc.addSheet({ title: 'Absensi', headerValues: ['Waktu', 'Nama', 'Status'] });
+    await sheetAbsen.addRow([waktu, nama, 'Baru Mendaftar']);
+
+    // Auto insert ke Tab 3 (Hafalan)
+    let sheetHafalan = doc.sheetsByIndex[2];
+    if (!sheetHafalan) sheetHafalan = await doc.addSheet({ title: 'Hafalan', headerValues: ['Waktu', 'Nama', 'Juz/Surat'] });
+    await sheetHafalan.addRow([waktu, nama, 'Belum ada riwayat']);
+
+    // Auto insert ke Tab 4 (Pembayaran)
+    let sheetBayar = doc.sheetsByIndex[3];
+    if (!sheetBayar) sheetBayar = await doc.addSheet({ title: 'Pembayaran', headerValues: ['Waktu', 'Nama', 'Nominal'] });
+    await sheetBayar.addRow([waktu, nama, '0']);
+
     return true;
   } catch (error) {
     console.error("Error saving data to spreadsheet:", error);
