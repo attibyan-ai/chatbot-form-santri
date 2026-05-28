@@ -261,7 +261,7 @@ async function startBot() {
                     await replyHuman(`*PROFIL PESANTREN PTQ AT-TIBYAN*\n\nPesantren Tahfidz Qur'an At-Tibyan adalah lembaga pendidikan yang berfokus pada tahfidz Al-Qur'an dan pembentukan akhlak mulia. Misi kami adalah mencetak generasi penghafal Qur'an yang berwawasan luas dan berbudi pekerti luhur.`);
                     return;
                 case '2':
-                    await replyHuman(`*KEGIATAN PESANTREN*\n\nKegiatan Harian Santri:\n03:30 - Tahajud & Persiapan Subuh\n04:30 - Sholat Subuh Berjamaah & Zikir\n05:30 - Halaqah Tahfidz (Sesi 1)\n07:30 - Mandi & Sarapan\n08:00 - Sekolah Dasar/Menengah\n13:00 - Sholat Dzuhur & Istirahat\n15:30 - Sholat Ashar & Halaqah Tahfidz (Sesi 2)\n17:30 - Persiapan Maghrib & Makan Malam\n18:30 - Sholat Maghrib & Murojaah\n19:30 - Sholat Isya & Kajian Kitab\n21:00 - Istirahat Malam`);
+                    await replyHuman(`*KEGIATAN PESANTREN*\n\nKegiatan Harian Santri:\n04:30 - Sholat Subuh Berjamaah & Zikir\n05:00 - Halaqah Tahfidz (Sesi 1)\n06:00 - Mandi & Sarapan\n07:00 - Belajar di Madrasah\n12:00 - Sholat Dzuhur\n15:30 - Sholat Ashar & Halaqah Tahfidz (Sesi 2)\n17:00 - Kajian Kitab\n17:30 - Persiapan Maghrib & Makan Malam\n18:30 - Sholat Maghrib & Murojaah\n19:30 - Sholat Isya, Tadarus Binnadzor, Halaqah Tahfidz, dan Iqra\n21:00 - Istirahat Malam`);
                     return;
                 case '3':
                     await replyHuman(`*INFORMASI BIAYA PESANTREN*\n\n1. Infaq Bangunan (sekali bayar): Rp 800.000\n2. Bulanan (asrama/makan/listrik/air): Rp 350.000\n\nUntuk detail lebih lanjut, silakan hubungi admin.`);
