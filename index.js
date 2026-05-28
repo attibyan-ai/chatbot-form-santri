@@ -78,7 +78,7 @@ async function chatWithAI(userMessage) {
     const data = await response.json();
 
     if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content;
+      return formatForWhatsApp(data.choices[0].message.content);
     } else {
       console.error('OpenRouter response error:', JSON.stringify(data));
       return 'Maaf, AI sedang tidak bisa merespons saat ini. Silakan coba lagi nanti.';
@@ -87,6 +87,39 @@ async function chatWithAI(userMessage) {
     console.error('Error calling OpenRouter:', error);
     return 'Maaf, terjadi kesalahan saat menghubungi AI. Silakan coba lagi nanti.';
   }
+}
+
+// Konversi format Markdown AI → format WhatsApp
+function formatForWhatsApp(text) {
+  if (!text) return '';
+
+  let result = text;
+
+  // ### Header / ## Header / # Header → *Header* (bold di WA)
+  result = result.replace(/^#{1,6}\s+(.+)$/gm, '*$1*');
+
+  // **bold** → *bold* (WA pakai single asterisk)
+  result = result.replace(/\*\*(.+?)\*\*/g, '*$1*');
+
+  // __bold__ → *bold*
+  result = result.replace(/__(.+?)__/g, '*$1*');
+
+  // *italic* yang tersisa (bukan bold) → _italic_ (WA pakai underscore)
+  // Skip ini karena single * di markdown = italic, tapi di WA = bold. Biarkan saja.
+
+  // `inline code` → tetap (WA tidak support, hapus backtick saja)
+  result = result.replace(/`([^`]+)`/g, '$1');
+
+  // ```code block``` → hapus triple backtick
+  result = result.replace(/```[\w]*\n?([\s\S]*?)```/g, '$1');
+
+  // - list → • list
+  result = result.replace(/^[\-\*]\s+/gm, '• ');
+
+  // Bersihkan double bold yang terjadi akibat konversi ganda *(*text*)* → *text*
+  result = result.replace(/\*{2,}/g, '*');
+
+  return result.trim();
 }
 
 async function startBot() {
