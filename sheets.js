@@ -24,25 +24,37 @@ if (process.env.CREDENTIALS_PATH) {
 
 const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID, serviceAccountAuth);
 
+async function getOrCreateSheet(title, headers) {
+    await doc.loadInfo();
+    let sheet = doc.sheetsByTitle[title];
+    if (!sheet) {
+        sheet = await doc.addSheet({ title, headerValues: headers });
+    } else {
+        try {
+            await sheet.loadHeaderRow();
+        } catch (e) {
+            await sheet.setHeaderRow(headers);
+        }
+    }
+    return sheet;
+}
+
 async function saveSantriData(waktu, nama, tanggalLahir, alamat) {
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByIndex[0];
     await sheet.addRow([waktu, nama, tanggalLahir, alamat]);
 
-    // Auto insert ke Tab 2 (Absensi)
-    let sheetAbsen = doc.sheetsByIndex[1];
-    if (!sheetAbsen) sheetAbsen = await doc.addSheet({ title: 'Absensi', headerValues: ['Waktu', 'Nama', 'Status'] });
+    // Auto insert ke Tab Absensi
+    const sheetAbsen = await getOrCreateSheet('Absensi', ['Waktu', 'Nama', 'Status']);
     await sheetAbsen.addRow([waktu, nama, 'Baru Mendaftar']);
 
-    // Auto insert ke Tab 3 (Hafalan)
-    let sheetHafalan = doc.sheetsByIndex[2];
-    if (!sheetHafalan) sheetHafalan = await doc.addSheet({ title: 'Hafalan', headerValues: ['Waktu', 'Nama', 'Juz/Surat'] });
+    // Auto insert ke Tab Hafalan
+    const sheetHafalan = await getOrCreateSheet('Hafalan', ['Waktu', 'Nama', 'Juz/Surat']);
     await sheetHafalan.addRow([waktu, nama, 'Belum ada riwayat']);
 
-    // Auto insert ke Tab 4 (Pembayaran)
-    let sheetBayar = doc.sheetsByIndex[3];
-    if (!sheetBayar) sheetBayar = await doc.addSheet({ title: 'Pembayaran', headerValues: ['Waktu', 'Nama', 'Nominal'] });
+    // Auto insert ke Tab Pembayaran
+    const sheetBayar = await getOrCreateSheet('Pembayaran', ['Waktu', 'Nama', 'Nominal']);
     await sheetBayar.addRow([waktu, nama, '0']);
 
     return true;
@@ -95,12 +107,10 @@ async function getSantriArray() {
   }
 }
 
-// ABSENSI (Sheet 1)
+// ABSENSI
 async function saveAbsensi(waktu, nama, status) {
   try {
-    await doc.loadInfo();
-    let sheet = doc.sheetsByIndex[1];
-    if (!sheet) sheet = await doc.addSheet({ title: 'Absensi', headerValues: ['Waktu', 'Nama', 'Status'] });
+    const sheet = await getOrCreateSheet('Absensi', ['Waktu', 'Nama', 'Status']);
     await sheet.addRow([waktu, nama, status]);
     return true;
   } catch (error) {
@@ -112,7 +122,7 @@ async function saveAbsensi(waktu, nama, status) {
 async function getAbsensi() {
   try {
     await doc.loadInfo();
-    const sheet = doc.sheetsByIndex[1];
+    const sheet = doc.sheetsByTitle['Absensi'];
     if (!sheet) return "Belum ada data absensi.";
     const rows = await sheet.getRows();
     if (rows.length === 0) return "Belum ada data absensi saat ini.";
@@ -130,12 +140,10 @@ async function getAbsensi() {
   }
 }
 
-// HAFALAN (Sheet 2)
+// HAFALAN
 async function saveHafalan(waktu, nama, detail) {
   try {
-    await doc.loadInfo();
-    let sheet = doc.sheetsByIndex[2];
-    if (!sheet) sheet = await doc.addSheet({ title: 'Hafalan', headerValues: ['Waktu', 'Nama', 'Juz/Surat'] });
+    const sheet = await getOrCreateSheet('Hafalan', ['Waktu', 'Nama', 'Juz/Surat']);
     await sheet.addRow([waktu, nama, detail]);
     return true;
   } catch (error) {
@@ -147,7 +155,7 @@ async function saveHafalan(waktu, nama, detail) {
 async function getHafalan() {
   try {
     await doc.loadInfo();
-    const sheet = doc.sheetsByIndex[2];
+    const sheet = doc.sheetsByTitle['Hafalan'];
     if (!sheet) return "Belum ada data progres hafalan.";
     const rows = await sheet.getRows();
     if (rows.length === 0) return "Belum ada data progres hafalan saat ini.";
@@ -165,12 +173,10 @@ async function getHafalan() {
   }
 }
 
-// PEMBAYARAN (Sheet 3)
+// PEMBAYARAN
 async function savePembayaran(waktu, nama, nominal) {
   try {
-    await doc.loadInfo();
-    let sheet = doc.sheetsByIndex[3];
-    if (!sheet) sheet = await doc.addSheet({ title: 'Pembayaran', headerValues: ['Waktu', 'Nama', 'Nominal'] });
+    const sheet = await getOrCreateSheet('Pembayaran', ['Waktu', 'Nama', 'Nominal']);
     await sheet.addRow([waktu, nama, nominal]);
     return true;
   } catch (error) {
@@ -182,7 +188,7 @@ async function savePembayaran(waktu, nama, nominal) {
 async function getPembayaran() {
   try {
     await doc.loadInfo();
-    const sheet = doc.sheetsByIndex[3];
+    const sheet = doc.sheetsByTitle['Pembayaran'];
     if (!sheet) return "Belum ada data catatan pembayaran.";
     const rows = await sheet.getRows();
     if (rows.length === 0) return "Belum ada data catatan pembayaran saat ini.";
