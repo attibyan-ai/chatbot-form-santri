@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const express = require('express');
 const qrcodeTerminal = require('qrcode-terminal');
 const qrcode = require('qrcode');
-const { saveSantriData, getListSantri, getSantriArray, getAbsensi, saveAbsensi, getHafalan, saveHafalan, getPembayaran, savePembayaran } = require('./sheets');
+const { saveSantriData, getListSantri, getSantriArray } = require('./sheets');
 const path = require('path');
 require('dotenv').config();
 
@@ -153,88 +153,6 @@ async function startBot() {
         const lines = text.split('\n').map(line => line.trim());
         const textUpper = text.toUpperCase();
 
-        // 1. CEK SESSION ADMIN (Alur Input Data)
-        if (ADMIN_NUMBERS.includes(msg.from) && userSessions[msg.from]) {
-            const session = userSessions[msg.from];
-
-            if (textUpper === 'BATAL') {
-                delete userSessions[msg.from];
-                await replyHuman('Proses input dibatalkan.');
-                return;
-            }
-
-            if (session.step === 'WAIT_YA') {
-                if (textUpper === 'YA') {
-                    await replyHuman('Mengambil daftar santri, mohon tunggu...');
-                    const santriList = await getSantriArray();
-
-                    if (santriList.length === 0) {
-                        await replyHuman('Belum ada santri yang terdaftar. Pendaftaran santri harus dilakukan terlebih dahulu.');
-                        delete userSessions[msg.from];
-                        return;
-                    }
-
-                    let listText = `*PILIH SANTRI UNTUK INPUT ${session.action}*\nSilakan balas dengan angka nomor urut santri di bawah ini:\n\n`;
-                    santriList.forEach(s => {
-                        listText += `${s.index}. ${s.nama}\n`;
-                    });
-                    listText += `\nKetik *BATAL* untuk membatalkan.`;
-
-                    session.step = 'PILIH_SANTRI';
-                    session.santriList = santriList;
-
-                    await replyHuman(listText);
-                } else {
-                    delete userSessions[msg.from];
-                }
-                return;
-            }
-
-            if (session.step === 'PILIH_SANTRI') {
-                const num = parseInt(textUpper);
-                if (isNaN(num) || num < 1 || num > session.santriList.length) {
-                    await replyHuman('Nomor santri tidak valid. Silakan balas dengan nomor yang benar, atau ketik *BATAL* untuk membatalkan.');
-                    return;
-                }
-
-                const selectedSantri = session.santriList[num - 1];
-                session.selectedSantri = selectedSantri;
-                session.step = 'INPUT_DATA';
-
-                let promptText = '';
-                if (session.action === 'ABSENSI') promptText = `Silakan masukkan status absensi untuk *${selectedSantri.nama}* (Bisa disingkat: H / S / I / A):`;
-                else if (session.action === 'HAFALAN') promptText = `Silakan masukkan progres hafalan untuk *${selectedSantri.nama}* (Wajib cantumkan angka di akhir untuk rekap bulanan, contoh: An-Naba = 5):`;
-                else if (session.action === 'PEMBAYARAN') promptText = `Silakan masukkan nominal pembayaran untuk *${selectedSantri.nama}* (contoh: 350000):`;
-
-                await replyHuman(promptText);
-                return;
-            }
-
-            if (session.step === 'INPUT_DATA') {
-                const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-                const nama = session.selectedSantri.nama;
-
-                await replyHuman('Sedang menyimpan data, mohon tunggu...');
-
-                let success = false;
-                if (session.action === 'ABSENSI') {
-                    success = await saveAbsensi(waktu, nama, text);
-                } else if (session.action === 'HAFALAN') {
-                    success = await saveHafalan(waktu, nama, text);
-                } else if (session.action === 'PEMBAYARAN') {
-                    success = await savePembayaran(waktu, nama, text);
-                }
-
-                if (success) {
-                    await replyHuman(`Berhasil menyimpan data ${session.action} untuk *${nama}*.`);
-                } else {
-                    await replyHuman(`Gagal menyimpan data ${session.action}. Silakan coba lagi nanti.`);
-                }
-
-                delete userSessions[msg.from];
-                return;
-            }
-        }
 
         // 2. DETEKSI MENU UTAMA & SAPAAN
         const greetings = ['MENU', 'PING', 'HALO', 'HELLO', 'P', 'ASSALAMUALAIKUM', 'INFO'];
@@ -245,17 +163,14 @@ async function startBot() {
                 `2. Kegiatan Pesantren\n` +
                 `3. Informasi Biaya Pesantren\n` +
                 `4. Pendaftaran Santri\n` +
-                `5. Absensi Santri\n` +
-                `6. Progres Hafalan Santri\n` +
-                `7. Buku Catatan Pembayaran\n\n` +
-                `Balas dengan angka 1 - 7.`;
+                `5. Daftar Santri\n\n` +
+                `Balas dengan angka 1 - 5.`;
 
             await replyHuman(menuText);
             return;
         }
 
-        // 3. LOGIKA PILIHAN MENU ANGKA
-        if (['1', '2', '3', '4', '5', '6', '7'].includes(textUpper)) {
+        if (['1', '2', '3', '4', '5'].includes(textUpper)) {
             switch (textUpper) {
                 case '1':
                     await replyHuman(`*PROFIL PESANTREN PTQ AT-TIBYAN*\n\nPesantren Tahfidz Qur'an At-Tibyan adalah lembaga pendidikan yang berfokus pada tahfidz Al-Qur'an dan pembentukan akhlak mulia. Misi kami adalah mencetak generasi penghafal Qur'an yang berwawasan luas dan berbudi pekerti luhur.\n\n*Pendiri:* KH Abdur Rouf Al-Hafidz\n*Pengasuh Saat Ini:* KH Jaza Abdul Ghoni Al-Hafidz\n*Lokasi:* Desa Laren, Kec. Bumiayu, Kab. Brebes, Jawa Tengah`);
@@ -270,24 +185,9 @@ async function startBot() {
                     await replyHuman('Untuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \nAlamat : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
                     return;
                 case '5':
-                case '6':
-                case '7':
-                    let typeName = '';
-                    let fetchFunc = null;
-                    if (textUpper === '5') { typeName = 'ABSENSI'; fetchFunc = getAbsensi; }
-                    if (textUpper === '6') { typeName = 'HAFALAN'; fetchFunc = getHafalan; }
-                    if (textUpper === '7') { typeName = 'PEMBAYARAN'; fetchFunc = getPembayaran; }
-
-                    if (ADMIN_NUMBERS.includes(msg.from)) {
-                        await replyHuman(`Memuat data ${typeName}...`);
-                        const dataText = await fetchFunc();
-                        await replyHuman(`${dataText}\n\n*MODE ADMIN*\nApakah Anda ingin menginput data ${typeName} baru?\nBalas *YA* untuk input, atau abaikan pesan ini.`);
-                        userSessions[msg.from] = { action: typeName, step: 'WAIT_YA' };
-                    } else {
-                        await replyHuman(`Memuat data ${typeName}...`);
-                        const dataText = await fetchFunc();
-                        await replyHuman(dataText);
-                    }
+                    await replyHuman('Sedang mengambil daftar santri dari database, mohon tunggu sebentar...');
+                    const listText = await getListSantri();
+                    await replyHuman(listText);
                     return;
             }
         }
