@@ -24,6 +24,11 @@ if (process.env.CREDENTIALS_PATH) {
 
 const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID, serviceAccountAuth);
 
+function toTitleCase(str) {
+  if (!str) return '';
+  return str.toLowerCase().split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
 async function getOrCreateSheet(title, headers) {
     await doc.loadInfo();
     let sheet = doc.sheetsByTitle[title];
@@ -76,7 +81,7 @@ async function getListSantri() {
 
     let result = "*Daftar Santri PTQ At-Tibyan:*\n\n";
     rows.forEach((row, index) => {
-      const nama = row._rawData[1] || 'Anonim';
+      const nama = toTitleCase(row._rawData[1] || 'Anonim');
       const tglLahir = row._rawData[2] || '-';
       const alamat = row._rawData[3] ? row._rawData[3] : '-';
       result += `${index + 1}. ${nama} (Lahir: ${tglLahir}, Alamat: ${alamat})\n`;
@@ -97,7 +102,7 @@ async function getSantriArray() {
     
     return rows.map((row, index) => ({
       index: index + 1,
-      nama: row._rawData[1] || 'Anonim',
+      nama: toTitleCase(row._rawData[1] || 'Anonim'),
       tglLahir: row._rawData[2] || '-',
       alamat: row._rawData[3] || '-'
     }));
@@ -149,7 +154,7 @@ async function getAbsensi() {
 
     rows.forEach(row => {
       const waktu = row._rawData[0] || '';
-      const nama = row._rawData[1] || '';
+      const nama = toTitleCase(row._rawData[1] || '');
       const rawStatus = (row._rawData[2] || '').toUpperCase();
       
       if (!nama || waktu === '-' || rawStatus.includes('BARU MENDAFTAR')) return;
@@ -179,10 +184,10 @@ async function getAbsensi() {
       }
     });
 
-    let result = `=========================\n*ABSEN HARI INI*\n📅 ${todayDisplay}\n=========================\n`;
+    let result = `=========================\n*ABSEN HARI INI*\n🗓️ ${todayDisplay}\n=========================\n`;
     santriArray.forEach((s, idx) => {
       const st = absenHariIni[s.nama];
-      result += `${idx + 1}. ${s.nama} ${st ? ` [ ${st} ]` : ''}\n-------------------------\n`;
+      result += `${idx + 1}. ${s.nama} ${st ? ` [ ${st} ]` : ''}\n`;
     });
 
     result += `\n=========================\n*ABSEN BULAN INI*\n=========================\n`;
@@ -195,7 +200,7 @@ async function getAbsensi() {
       if (counts.A > 0) statStrs.push(`A: ${counts.A}`);
       
       let statStr = statStrs.length > 0 ? statStrs.join(' | ') : '-';
-      result += `${idx + 1}. ${s.nama}\n   ${statStr}\n-------------------------\n`;
+      result += `${idx + 1}. ${s.nama}\n   ${statStr}\n`;
     });
 
     return result.trim();
@@ -247,7 +252,7 @@ async function getHafalan() {
 
     rows.forEach(row => {
       const waktu = row._rawData[0] || '';
-      const nama = row._rawData[1] || '';
+      const nama = toTitleCase(row._rawData[1] || '');
       const detail = row._rawData[2] || '';
       
       if (!nama || waktu === '-' || detail.includes('Belum ada riwayat')) return;
@@ -274,16 +279,16 @@ async function getHafalan() {
       }
     });
 
-    let result = `=========================\n*HAFALAN HARI INI*\n📅 ${todayDisplay}\n=========================\n`;
+    let result = `=========================\n*HAFALAN HARI INI*\n🗓️ ${todayDisplay}\n=========================\n`;
     santriArray.forEach((s, idx) => {
       const st = hafalanHariIni[s.nama];
-      result += `${idx + 1}. ${s.nama} ${st ? ` (${st})` : ''}\n-------------------------\n`;
+      result += `${idx + 1}. ${s.nama} ${st ? ` (${st})` : ''}\n`;
     });
 
     result += `\n=========================\n*HAFALAN BULAN INI*\n=========================\n`;
     santriArray.forEach((s, idx) => {
       const totalAyat = hafalanBulanIni[s.nama];
-      result += `${idx + 1}. ${s.nama}\n   ${totalAyat > 0 ? `${totalAyat} ayat` : '-'}\n-------------------------\n`;
+      result += `${idx + 1}. ${s.nama}\n   ${totalAyat > 0 ? `${totalAyat} ayat` : '-'}\n`;
     });
 
     return result.trim();
@@ -332,7 +337,7 @@ async function getPembayaran() {
 
     rows.forEach(row => {
       const waktu = row._rawData[0] || '';
-      const nama = row._rawData[1] || '';
+      const nama = toTitleCase(row._rawData[1] || '');
       const nominalStr = row._rawData[2] || '0';
       
       if (!nama || waktu === '-') return;
@@ -349,7 +354,7 @@ async function getPembayaran() {
       }
     });
 
-    let result = `=========================\n*CATATAN PEMBAYARAN*\n📅 Bulan ${monthName} ${currentYear}\n=========================\n`;
+    let result = `=========================\n*CATATAN PEMBAYARAN*\n🗓️ Bulan ${monthName} ${currentYear}\n=========================\n`;
     santriArray.forEach((s, idx) => {
       const totalBayar = bayarBulanIni[s.nama];
       let status = '';
@@ -361,7 +366,7 @@ async function getPembayaran() {
         status = 'Belum Lunas';
       }
       
-      result += `${idx + 1}. ${s.nama}\n   [ ${status} ]\n-------------------------\n`;
+      result += `${idx + 1}. ${s.nama}\n   [ ${status} ]\n`;
     });
 
     return result.trim();

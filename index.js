@@ -362,7 +362,7 @@ async function startBot() {
             if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tanggal Lahir :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
         } else {
             // Opsional: berikan petunjuk ketik MENU
-            if (!chat.isGroup) await replyHuman('Assalamualaikum!\nSelamat datang di chatbot pendaftaran Santri PTQ At-Tibyan.\n\nKetik *MENU* untuk melihat daftar informasi dan layanan pesantren.');
+            if (!chat.isGroup) await replyHuman('Assalamualaikum!\nSelamat datang di chatbot PTQ At-Tibyan.\n\nKetik *MENU* untuk melihat daftar informasi dan layanan pesantren.');
         }
     });
 
