@@ -172,7 +172,7 @@ async function getAbsensi() {
 
       if (!statusSymbol) return;
 
-      if (rowDateStr === todayDateStr) {
+      if (rowParts[0] === todayParts[0] && rowParts[1] === todayParts[1] && rowParts[2] === todayParts[2]) {
         if (statusSymbol === 'H') absenHariIni[nama] = '✓';
         else absenHariIni[nama] = statusSymbol;
       }
@@ -200,7 +200,7 @@ async function getAbsensi() {
       if (counts.A > 0) statStrs.push(`A: ${counts.A}`);
       
       let statStr = statStrs.length > 0 ? statStrs.join(' | ') : '-';
-      result += `${idx + 1}. ${s.nama}\n   ${statStr}\n`;
+      result += `${idx + 1}. ${s.nama} - ${statStr}\n`;
     });
 
     return result.trim();
@@ -261,7 +261,7 @@ async function getHafalan() {
       const rowParts = rowDateStr.split(/\D+/);
       if (rowParts.length < 3) return;
 
-      if (rowDateStr === todayDateStr) {
+      if (rowParts[0] === todayParts[0] && rowParts[1] === todayParts[1] && rowParts[2] === todayParts[2]) {
         hafalanHariIni[nama] = detail;
       }
 
@@ -288,7 +288,7 @@ async function getHafalan() {
     result += `\n=========================\n*HAFALAN BULAN INI*\n=========================\n`;
     santriArray.forEach((s, idx) => {
       const totalAyat = hafalanBulanIni[s.nama];
-      result += `${idx + 1}. ${s.nama}\n   ${totalAyat > 0 ? `${totalAyat} ayat` : '-'}\n`;
+      result += `${idx + 1}. ${s.nama} - ${totalAyat > 0 ? `${totalAyat} ayat` : '-'}\n`;
     });
 
     return result.trim();
@@ -366,7 +366,7 @@ async function getPembayaran() {
         status = 'Belum Lunas';
       }
       
-      result += `${idx + 1}. ${s.nama}\n   [ ${status} ]\n`;
+      result += `${idx + 1}. ${s.nama} - [ ${status} ]\n`;
     });
 
     return result.trim();
