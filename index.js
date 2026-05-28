@@ -46,7 +46,7 @@ app.listen(PORT, () => {
 });
 
 const userSessions = {};
-const ADMIN_NUMBER = '6285888892326@c.us';
+const ADMIN_NUMBERS = ['6285888892326@c.us', '628816604554@c.us'];
 
 async function startBot() {
     let authStrategy;
@@ -154,7 +154,7 @@ async function startBot() {
         const textUpper = text.toUpperCase();
 
         // 1. CEK SESSION ADMIN (Alur Input Data)
-        if (msg.from === ADMIN_NUMBER && userSessions[msg.from]) {
+        if (ADMIN_NUMBERS.includes(msg.from) && userSessions[msg.from]) {
             const session = userSessions[msg.from];
 
             if (textUpper === 'BATAL') {
@@ -278,7 +278,7 @@ async function startBot() {
                     if (textUpper === '6') { typeName = 'HAFALAN'; fetchFunc = getHafalan; }
                     if (textUpper === '7') { typeName = 'PEMBAYARAN'; fetchFunc = getPembayaran; }
 
-                    if (msg.from === ADMIN_NUMBER) {
+                    if (ADMIN_NUMBERS.includes(msg.from)) {
                         await replyHuman(`Memuat data ${typeName}...`);
                         const dataText = await fetchFunc();
                         await replyHuman(`${dataText}\n\n*MODE ADMIN*\nApakah Anda ingin menginput data ${typeName} baru?\nBalas *YA* untuk input, atau abaikan pesan ini.`);
