@@ -258,7 +258,7 @@ async function startBot() {
         if (['1', '2', '3', '4', '5', '6', '7'].includes(textUpper)) {
             switch (textUpper) {
                 case '1':
-                    await replyHuman(`*PROFIL PESANTREN PTQ AT-TIBYAN*\n\nPesantren Tahfidz Qur'an At-Tibyan adalah lembaga pendidikan yang berfokus pada tahfidz Al-Qur'an dan pembentukan akhlak mulia. Misi kami adalah mencetak generasi penghafal Qur'an yang berwawasan luas dan berbudi pekerti luhur.`);
+                    await replyHuman(`*PROFIL PESANTREN PTQ AT-TIBYAN*\n\nPesantren Tahfidz Qur'an At-Tibyan adalah lembaga pendidikan yang berfokus pada tahfidz Al-Qur'an dan pembentukan akhlak mulia. Misi kami adalah mencetak generasi penghafal Qur'an yang berwawasan luas dan berbudi pekerti luhur.\n\n*Pendiri:* KH Abdur Rouf Al-Hafidz\n*Pengasuh Saat Ini:* KH Jaza Abdul Ghoni Al-Hafidz\n*Lokasi:* Desa Laren, Kec. Bumiayu, Kab. Brebes, Jawa Tengah`);
                     return;
                 case '2':
                     await replyHuman(`*KEGIATAN PESANTREN*\n\nKegiatan Harian Santri:\n04:30 - Sholat Subuh Berjamaah & Zikir\n05:00 - Halaqah Tahfidz (Sesi 1)\n06:00 - Mandi & Sarapan\n07:00 - Belajar di Madrasah\n12:00 - Sholat Dzuhur\n15:30 - Sholat Ashar & Halaqah Tahfidz (Sesi 2)\n17:00 - Kajian Kitab\n17:30 - Persiapan Maghrib & Makan Malam\n18:30 - Sholat Maghrib & Murojaah\n19:30 - Sholat Isya, Tadarus Binnadzor, Halaqah Tahfidz, dan Iqra\n21:00 - Istirahat Malam`);
