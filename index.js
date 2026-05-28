@@ -264,7 +264,7 @@ async function startBot() {
                     await replyHuman(`*KEGIATAN PESANTREN*\n\nKegiatan Harian Santri:\n03:30 - Tahajud & Persiapan Subuh\n04:30 - Sholat Subuh Berjamaah & Zikir\n05:30 - Halaqah Tahfidz (Sesi 1)\n07:30 - Mandi & Sarapan\n08:00 - Sekolah Dasar/Menengah\n13:00 - Sholat Dzuhur & Istirahat\n15:30 - Sholat Ashar & Halaqah Tahfidz (Sesi 2)\n17:30 - Persiapan Maghrib & Makan Malam\n18:30 - Sholat Maghrib & Murojaah\n19:30 - Sholat Isya & Kajian Kitab\n21:00 - Istirahat Malam`);
                     return;
                 case '3':
-                    await replyHuman(`*INFORMASI BIAYA PESANTREN*\n\n1. Uang Pendaftaran: Rp 250.000\n2. Uang Pangkal: Rp 3.000.000 (Bisa dicicil)\n3. SPP Bulanan: Rp 750.000 (Mencakup asrama, makan 3x sehari, dan pendidikan)\n4. Seragam: Rp 500.000\n\nUntuk detail lebih lanjut, silakan hubungi admin.`);
+                    await replyHuman(`*INFORMASI BIAYA PESANTREN*\n\n1. Infaq Bangunan (sekali bayar): Rp 800.000\n2. Bulanan (asrama/makan/listrik/air): Rp 350.000\n\nUntuk detail lebih lanjut, silakan hubungi admin.`);
                     return;
                 case '4':
                     await replyHuman('Untuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \nAlamat : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
