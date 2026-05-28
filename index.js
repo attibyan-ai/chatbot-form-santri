@@ -239,7 +239,7 @@ async function startBot() {
         // 2. DETEKSI MENU UTAMA & SAPAAN
         const greetings = ['MENU', 'PING', 'HALO', 'HELLO', 'P', 'ASSALAMUALAIKUM', 'INFO'];
         if (greetings.includes(textUpper)) {
-            const menuText = `*MENU UTAMA BOT SANTRI*\n\n` +
+            const menuText = `*MENU UTAMA*\n\n` +
                 `Silakan balas dengan *angka* menu yang ingin diakses:\n` +
                 `1. Profil Pesantren\n` +
                 `2. Kegiatan Pesantren\n` +
