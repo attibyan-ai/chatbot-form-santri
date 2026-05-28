@@ -179,23 +179,23 @@ async function getAbsensi() {
       }
     });
 
-    let result = `*Absen Hari Ini tgl ${todayDisplay}*\n`;
+    let result = `=========================\n*ABSEN HARI INI*\n📅 ${todayDisplay}\n=========================\n`;
     santriArray.forEach((s, idx) => {
       const st = absenHariIni[s.nama];
-      result += `${idx + 1}. ${s.nama} ${st ? st : ''}\n`;
+      result += `${idx + 1}. ${s.nama} ${st ? ` [ ${st} ]` : ''}\n-------------------------\n`;
     });
 
-    result += `\n*Absen Bulan Ini*\n`;
+    result += `\n=========================\n*ABSEN BULAN INI*\n=========================\n`;
     santriArray.forEach((s, idx) => {
       const counts = absenBulanIni[s.nama];
       let statStrs = [];
-      if (counts.H > 0) statStrs.push(`H : ${counts.H}`);
-      if (counts.S > 0) statStrs.push(`S : ${counts.S}`);
-      if (counts.I > 0) statStrs.push(`I : ${counts.I}`);
-      if (counts.A > 0) statStrs.push(`A : ${counts.A}`);
+      if (counts.H > 0) statStrs.push(`H: ${counts.H}`);
+      if (counts.S > 0) statStrs.push(`S: ${counts.S}`);
+      if (counts.I > 0) statStrs.push(`I: ${counts.I}`);
+      if (counts.A > 0) statStrs.push(`A: ${counts.A}`);
       
-      let statStr = statStrs.length > 0 ? statStrs.join(', ') : '-';
-      result += `${idx + 1}. ${s.nama} ${statStr}\n`;
+      let statStr = statStrs.length > 0 ? statStrs.join(' | ') : '-';
+      result += `${idx + 1}. ${s.nama}\n   ${statStr}\n-------------------------\n`;
     });
 
     return result.trim();
