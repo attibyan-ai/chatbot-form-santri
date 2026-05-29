@@ -294,28 +294,29 @@ async function startBot() {
 
         // Logika Pendaftaran Khusus Grup (Format Pendek: Nama, Tanggal Lahir, Alamat)
         if (chat.isGroup) {
-            if (!text) return;
+            if (text && text.includes(',')) {
+                const parts = text.split(',');
+                if (parts.length >= 3) {
+                    const nama = parts[0].trim();
+                    const tanggalLahir = parts[1].trim();
+                    const alamat = parts.slice(2).join(',').trim();
 
-            const parts = text.split(',');
-            if (parts.length >= 3) {
-                const nama = parts[0].trim();
-                const tanggalLahir = parts[1].trim();
-                const alamat = parts.slice(2).join(',').trim();
+                    if (nama && tanggalLahir && alamat) {
+                        const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
-                if (nama && tanggalLahir && alamat) {
-                    const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+                        await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
 
-                    await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
-
-                    const success = await saveSantriData(waktu, nama, tanggalLahir, alamat);
-                    if (success) {
-                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}\nAlamat: ${alamat}`);
-                    } else {
-                        await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
+                        const success = await saveSantriData(waktu, nama, tanggalLahir, alamat);
+                        if (success) {
+                            await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}\nAlamat: ${alamat}`);
+                        } else {
+                            await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
+                        }
+                        return; // Berhenti di sini jika pendaftaran berhasil diproses
                     }
                 }
             }
-            return;
+            // Jika tidak cocok dengan format pendaftaran, biarkan berlanjut ke bawah
         }
 
         // Logika Pendaftaran Khusus Jalur Pribadi (Japri) dengan Format Lengkap
@@ -353,8 +354,15 @@ async function startBot() {
         } else if (textUpper.includes('NAMA LENGKAP') || textUpper.includes('TANGGAL LAHIR') || textUpper.includes('ALAMAT')) {
             if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tanggal Lahir :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
         } else {
-            // Opsional: berikan petunjuk ketik MENU
-            if (!chat.isGroup) await replyHuman('Assalamualaikum!\nSelamat datang di chatbot PTQ At-Tibyan.\n\nKetik *MENU* untuk melihat daftar informasi dan layanan pesantren.');
+            // Fallback: Jika hanya mention kosong atau pesan tak dikenal
+            if (!text) {
+                await replyHuman('Halo! Ada yang bisa saya bantu?\nKetik *MENU* untuk melihat daftar informasi pesantren, atau langsung ketik pertanyaan Anda kepada saya.');
+            } else {
+                // Semua pesan yang tidak dikenali akan diteruskan ke AI sebagai fallback
+                await chat.sendStateTyping();
+                const aiReply = await chatWithAI(text);
+                await msg.reply(aiReply);
+            }
         }
     });
 
