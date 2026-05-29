@@ -241,22 +241,15 @@ async function startBot() {
             }
         }
 
-        // 2. DETEKSI MENU UTAMA & SAPAAN
-        const greetings = ['MENU', 'PING', 'HALO', 'HELLO', 'P', 'ASSALAMUALAIKUM', 'INFO'];
-        if (greetings.includes(textUpper)) {
-            const menuText = `*MENU UTAMA*\n\n` +
-                `Silakan balas dengan *angka* menu yang ingin diakses:\n` +
-                `1. Profil Pesantren\n` +
-                `2. Kegiatan Pesantren\n` +
-                `3. Informasi Biaya Pesantren\n` +
-                `4. Pendaftaran Santri\n` +
-                `5. Daftar Santri\n` +
-                `6. Chat dengan AI 🤖\n\n` +
-                `Balas dengan angka 1 - 6.`;
-
-            await replyHuman(menuText);
-            return;
-        }
+        const menuText = `*MENU UTAMA*\n\n` +
+            `Silakan balas dengan *angka* menu yang ingin diakses:\n` +
+            `1. Profil Pesantren\n` +
+            `2. Kegiatan Pesantren\n` +
+            `3. Informasi Biaya Pesantren\n` +
+            `4. Pendaftaran Santri\n` +
+            `5. Daftar Santri\n` +
+            `6. Chat dengan AI 🤖\n\n` +
+            `Balas dengan angka 1 - 6.`;
 
         if (['1', '2', '3', '4', '5', '6'].includes(textUpper)) {
             switch (textUpper) {
@@ -354,14 +347,13 @@ async function startBot() {
         } else if (textUpper.includes('NAMA LENGKAP') || textUpper.includes('TANGGAL LAHIR') || textUpper.includes('ALAMAT')) {
             if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tanggal Lahir :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
         } else {
-            // Fallback: Jika hanya mention kosong atau pesan tak dikenal
-            if (!text) {
-                await replyHuman('Halo! Ada yang bisa saya bantu?\nKetik *MENU* untuk melihat daftar informasi pesantren, atau langsung ketik pertanyaan Anda kepada saya.');
-            } else {
-                // Semua pesan yang tidak dikenali akan diteruskan ke AI sebagai fallback
-                await chat.sendStateTyping();
-                const aiReply = await chatWithAI(text);
-                await msg.reply(aiReply);
+            // Fallback: Apapun pesannya (tidak dikenal/kosong), langsung berikan Menu Utama
+            // Tidak perlu lagi membalas "Ketik MENU", tapi langsung sodorkan menunya
+            if (!chat.isGroup || !text) {
+                await replyHuman(menuText);
+            } else if (chat.isGroup) {
+                // Di grup, jika ada teks tak dikenal hasil mention, langsung berikan menu juga
+                await replyHuman(menuText);
             }
         }
     });
