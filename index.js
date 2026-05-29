@@ -241,7 +241,8 @@ async function startBot() {
             }
         }
 
-        const menuText = `*MENU UTAMA*\n\n` +
+        const menuText = `Assalamualaikum! Selamat datang di ChatBot PTQ At-Tibyan.\n\n` +
+            `*MENU UTAMA*\n\n` +
             `Silakan balas dengan *angka* menu yang ingin diakses:\n` +
             `1. Profil Pesantren\n` +
             `2. Kegiatan Pesantren\n` +
