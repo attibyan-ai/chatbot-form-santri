@@ -286,49 +286,71 @@ async function startBot() {
             return;
         }
 
-        // Logika Pendaftaran dengan Format Lengkap (Berlaku untuk Japri maupun Grup)
-        const namaLine = lines.find(line => line.toUpperCase().startsWith('NAMA LENGKAP'));
-        const ttlLine = lines.find(line => line.toUpperCase().startsWith('TEMPAT, TANGGAL LAHIR') || line.toUpperCase().startsWith('TEMPAT TANGGAL LAHIR'));
-        const jkLine = lines.find(line => line.toUpperCase().startsWith('JENIS KELAMIN'));
-        const ayahLine = lines.find(line => line.toUpperCase().startsWith('NAMA AYAH'));
-        const ibuLine = lines.find(line => line.toUpperCase().startsWith('NAMA IBU'));
-        const alamatLine = lines.find(line => line.toUpperCase().startsWith('ALAMAT'));
+        // Logika Pendaftaran Cerdas (Lebih fleksibel, anti-kaku)
+        let isRegistration = false;
+        let regData = [];
 
-        if (namaLine && ttlLine && jkLine && ayahLine && ibuLine && alamatLine) {
-            const namaParts = namaLine.split(':');
-            const ttlParts = ttlLine.split(':');
-            const jkParts = jkLine.split(':');
-            const ayahParts = ayahLine.split(':');
-            const ibuParts = ibuLine.split(':');
-            const alamatParts = alamatLine.split(':');
-
-            if (namaParts.length >= 2 && ttlParts.length >= 2 && jkParts.length >= 2 && ayahParts.length >= 2 && ibuParts.length >= 2 && alamatParts.length >= 2) {
-                const nama = namaParts.slice(1).join(':').trim();
-                const ttl = ttlParts.slice(1).join(':').trim();
-                const jk = jkParts.slice(1).join(':').trim();
-                const ayah = ayahParts.slice(1).join(':').trim();
-                const ibu = ibuParts.slice(1).join(':').trim();
-                const alamat = alamatParts.slice(1).join(':').trim();
-
-                if (nama && ttl && jk && ayah && ibu && alamat) {
-                    const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-
-                    await replyHuman('Sedang memproses data pendaftaran Anda, mohon tunggu sebentar...');
-
-                    const success = await saveSantriData(waktu, nama, ttl, jk, ayah, ibu, alamat);
-                    if (success) {
-                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTempat, Tgl Lahir: ${ttl}\nJenis Kelamin: ${jk}\nNama Ayah: ${ayah}\nNama Ibu: ${ibu}\nAlamat: ${alamat}`);
-                    } else {
-                        await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
-                    }
-                } else {
-                    if (!chat.isGroup) await replyHuman('Format pengisian salah. Pastikan Anda mengisi data setelah tanda titik dua (:).');
-                }
-            } else {
-                if (!chat.isGroup) await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Jamil Inayatulloh\nNama Ibu : Euis Syamsiah\nAlamat : Laren Bumiayu');
+        // 1. Deteksi format pisah koma (sebaris)
+        if (text.includes(',') && !text.includes('\n')) {
+            const parts = text.split(',');
+            if (parts.length === 7) {
+                // Misal ada koma di TTL: Nama, Tempat, Tgl Lahir, JK, Ayah, Ibu, Alamat
+                regData = [
+                    parts[0].trim(),
+                    parts[1].trim() + ', ' + parts[2].trim(),
+                    parts[3].trim(),
+                    parts[4].trim(),
+                    parts[5].trim(),
+                    parts[6].trim()
+                ];
+                isRegistration = true;
+            } else if (parts.length === 6) {
+                regData = parts.map(p => p.trim());
+                isRegistration = true;
             }
-        } else if (textUpper.includes('NAMA LENGKAP') || textUpper.includes('TEMPAT, TANGGAL LAHIR') || textUpper.includes('ALAMAT')) {
-            if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tempat, Tanggal Lahir :", "Jenis Kelamin :", "Nama Ayah :", "Nama Ibu :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Jamil Inayatulloh\nNama Ibu : Euis Syamsiah\nAlamat : Laren Bumiayu');
+        }
+
+        // 2. Deteksi format multi-baris (Japri/Grup normal)
+        if (!isRegistration) {
+            const nonEmptyLines = lines.filter(l => l.length > 0);
+            const labelLines = nonEmptyLines.filter(l => l.includes(':'));
+            
+            if (labelLines.length >= 6) {
+                // User pakai label apa saja asal ada titik dua (Nama:, TTL:, Ayah:, dst)
+                regData = labelLines.slice(0, 6).map(l => l.substring(l.indexOf(':') + 1).trim());
+                isRegistration = true;
+            } else if (nonEmptyLines.length >= 6) {
+                // User tidak pakai label sama sekali, cuma kirim 6 baris data
+                // Cek baris ke-3 apakah berisi indikator Jenis Kelamin (L/P/Laki/Perempuan)
+                const baris3 = nonEmptyLines[2].toUpperCase();
+                if (baris3 === 'L' || baris3 === 'P' || baris3.includes('LAKI') || baris3.includes('PEREMPUAN') || baris3.includes('PRIA') || baris3.includes('WANITA')) {
+                    regData = nonEmptyLines.slice(0, 6).map(l => l.trim());
+                    isRegistration = true;
+                }
+            }
+        }
+
+        if (isRegistration && regData.length === 6) {
+            const [nama, ttl, jk, ayah, ibu, alamat] = regData;
+            
+            // Validasi nama jangan sampai kosong
+            if (nama && ttl && jk && alamat) {
+                const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+                await replyHuman('Sedang memproses data pendaftaran Anda, mohon tunggu sebentar...');
+
+                const success = await saveSantriData(waktu, nama, ttl, jk, ayah, ibu, alamat);
+                if (success) {
+                    await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTempat, Tgl Lahir: ${ttl}\nJenis Kelamin: ${jk}\nNama Ayah: ${ayah}\nNama Ibu: ${ibu}\nAlamat: ${alamat}`);
+                } else {
+                    await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
+                }
+                return; // Sukses, langsung berhenti
+            }
+        }
+        
+        // Peringatan jika user cuma kirim sepotong data
+        if (textUpper.includes('NAMA LENGKAP') || textUpper.includes('TEMPAT, TANGGAL LAHIR') || textUpper.includes('ALAMAT')) {
+            if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap atau salah ketik. Pastikan Anda mengirimkan 6 baris data secara lengkap.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Jamil Inayatulloh\nNama Ibu : Euis Syamsiah\nAlamat : Laren Bumiayu');
         } else {
             // Fallback: Apapun pesannya (tidak dikenal/kosong), langsung berikan Menu Utama
             // Tidak perlu lagi membalas "Ketik MENU", tapi langsung sodorkan menunya
