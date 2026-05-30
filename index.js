@@ -264,7 +264,7 @@ async function startBot() {
                     await replyHuman(`*INFORMASI BIAYA PESANTREN*\n\n1. Infaq Bangunan (sekali bayar): Rp 800.000\n2. Bulanan (asrama/makan/listrik/air): Rp 350.000\n\nUntuk detail lebih lanjut, silakan hubungi admin.`);
                     return;
                 case '4':
-                    await replyHuman('Untuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTanggal Lahir : \nAlamat : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
+                    await replyHuman('Untuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTempat, Tanggal Lahir : \nJenis Kelamin : \nNama Ayah : \nNama Ibu : \nAlamat : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Budi\nNama Ibu : Siti\nAlamat : Laren Bumiayu');
                     return;
                 case '5':
                     await replyHuman('Sedang mengambil daftar santri dari database, mohon tunggu sebentar...');
@@ -286,67 +286,49 @@ async function startBot() {
             return;
         }
 
-        // Logika Pendaftaran Khusus Grup (Format Pendek: Nama, Tanggal Lahir, Alamat)
-        if (chat.isGroup) {
-            if (text && text.includes(',')) {
-                const parts = text.split(',');
-                if (parts.length >= 3) {
-                    const nama = parts[0].trim();
-                    const tanggalLahir = parts[1].trim();
-                    const alamat = parts.slice(2).join(',').trim();
-
-                    if (nama && tanggalLahir && alamat) {
-                        const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-
-                        await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
-
-                        const success = await saveSantriData(waktu, nama, tanggalLahir, alamat);
-                        if (success) {
-                            await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}\nAlamat: ${alamat}`);
-                        } else {
-                            await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
-                        }
-                        return; // Berhenti di sini jika pendaftaran berhasil diproses
-                    }
-                }
-            }
-            // Jika tidak cocok dengan format pendaftaran, biarkan berlanjut ke bawah
-        }
-
-        // Logika Pendaftaran Khusus Jalur Pribadi (Japri) dengan Format Lengkap
+        // Logika Pendaftaran dengan Format Lengkap (Berlaku untuk Japri maupun Grup)
         const namaLine = lines.find(line => line.toUpperCase().startsWith('NAMA LENGKAP'));
-        const tglLine = lines.find(line => line.toUpperCase().startsWith('TANGGAL LAHIR'));
+        const ttlLine = lines.find(line => line.toUpperCase().startsWith('TEMPAT, TANGGAL LAHIR') || line.toUpperCase().startsWith('TEMPAT TANGGAL LAHIR'));
+        const jkLine = lines.find(line => line.toUpperCase().startsWith('JENIS KELAMIN'));
+        const ayahLine = lines.find(line => line.toUpperCase().startsWith('NAMA AYAH'));
+        const ibuLine = lines.find(line => line.toUpperCase().startsWith('NAMA IBU'));
         const alamatLine = lines.find(line => line.toUpperCase().startsWith('ALAMAT'));
 
-        if (namaLine && tglLine && alamatLine) {
+        if (namaLine && ttlLine && jkLine && ayahLine && ibuLine && alamatLine) {
             const namaParts = namaLine.split(':');
-            const tglParts = tglLine.split(':');
+            const ttlParts = ttlLine.split(':');
+            const jkParts = jkLine.split(':');
+            const ayahParts = ayahLine.split(':');
+            const ibuParts = ibuLine.split(':');
             const alamatParts = alamatLine.split(':');
 
-            if (namaParts.length >= 2 && tglParts.length >= 2 && alamatParts.length >= 2) {
+            if (namaParts.length >= 2 && ttlParts.length >= 2 && jkParts.length >= 2 && ayahParts.length >= 2 && ibuParts.length >= 2 && alamatParts.length >= 2) {
                 const nama = namaParts.slice(1).join(':').trim();
-                const tanggalLahir = tglParts.slice(1).join(':').trim();
+                const ttl = ttlParts.slice(1).join(':').trim();
+                const jk = jkParts.slice(1).join(':').trim();
+                const ayah = ayahParts.slice(1).join(':').trim();
+                const ibu = ibuParts.slice(1).join(':').trim();
                 const alamat = alamatParts.slice(1).join(':').trim();
 
-                if (nama && tanggalLahir && alamat) {
+                if (nama && ttl && jk && ayah && ibu && alamat) {
                     const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
-                    await replyHuman('Sedang memproses data Anda, mohon tunggu sebentar...');
+                    await replyHuman('Sedang memproses data pendaftaran Anda, mohon tunggu sebentar...');
 
-                    const success = await saveSantriData(waktu, nama, tanggalLahir, alamat);
+                    const success = await saveSantriData(waktu, nama, ttl, jk, ayah, ibu, alamat);
                     if (success) {
-                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTanggal Lahir: ${tanggalLahir}\nAlamat: ${alamat}`);
+                        await replyHuman(`Terima kasih! Data Anda telah berhasil disimpan sebagai santri.\n\nNama: ${nama}\nTempat, Tgl Lahir: ${ttl}\nJenis Kelamin: ${jk}\nNama Ayah: ${ayah}\nNama Ibu: ${ibu}\nAlamat: ${alamat}`);
                     } else {
                         await replyHuman('Maaf, terjadi kesalahan saat menyimpan data ke sistem kami. Silakan coba lagi nanti.');
                     }
                 } else {
-                    if (!chat.isGroup) await replyHuman('Format pengisian salah. Pastikan Anda mengisi nama, tanggal lahir, dan alamat setelah tanda titik dua (:).');
+                    if (!chat.isGroup) await replyHuman('Format pengisian salah. Pastikan Anda mengisi data setelah tanda titik dua (:).');
                 }
             } else {
-                if (!chat.isGroup) await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
+                if (!chat.isGroup) await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Budi\nNama Ibu : Siti\nAlamat : Laren Bumiayu');
             }
-        } else if (textUpper.includes('NAMA LENGKAP') || textUpper.includes('TANGGAL LAHIR') || textUpper.includes('ALAMAT')) {
-            if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tanggal Lahir :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTanggal Lahir : 09-12-1996\nAlamat : Laren Bumiayu');
+        } else if (textUpper.includes('NAMA LENGKAP') || textUpper.includes('TEMPAT, TANGGAL LAHIR') || textUpper.includes('ALAMAT')) {
+            if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tempat, Tanggal Lahir :", "Jenis Kelamin :", "Nama Ayah :", "Nama Ibu :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Budi\nNama Ibu : Siti\nAlamat : Laren Bumiayu');
         } else {
             // Fallback: Apapun pesannya (tidak dikenal/kosong), langsung berikan Menu Utama
             // Tidak perlu lagi membalas "Ketik MENU", tapi langsung sodorkan menunya

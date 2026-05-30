@@ -44,11 +44,11 @@ async function getOrCreateSheet(title, headers) {
     return sheet;
 }
 
-async function saveSantriData(waktu, nama, tanggalLahir, alamat) {
+async function saveSantriData(waktu, nama, ttl, jk, namaAyah, namaIbu, alamat) {
   try {
     await doc.loadInfo();
     const sheet = doc.sheetsByIndex[0];
-    await sheet.addRow([waktu, nama, tanggalLahir, alamat]);
+    await sheet.addRow([waktu, nama, ttl, jk, namaAyah, namaIbu, alamat]);
 
     return true;
   } catch (error) {
@@ -70,9 +70,21 @@ async function getListSantri() {
     let result = "*Daftar Santri PTQ At-Tibyan:*\n\n";
     rows.forEach((row, index) => {
       const nama = toTitleCase(row._rawData[1] || 'Anonim');
-      const tglLahir = row._rawData[2] || '-';
-      const alamat = row._rawData[3] ? row._rawData[3] : '-';
-      result += `${index + 1}. ${nama} (Lahir: ${tglLahir}, Alamat: ${alamat})\n`;
+      let ttl, jk, ayah, ibu, alamat;
+      
+      // Deteksi jika ini adalah format baru (kolom > 4) atau lama
+      if (row._rawData.length > 4) {
+        ttl = row._rawData[2] || '-';
+        jk = row._rawData[3] || '-';
+        ayah = row._rawData[4] || '-';
+        ibu = row._rawData[5] || '-';
+        alamat = row._rawData[6] || '-';
+      } else {
+        ttl = row._rawData[2] || '-';
+        alamat = row._rawData[3] || '-';
+      }
+      
+      result += `${index + 1}. ${nama} (Lahir: ${ttl}, Alamat: ${alamat})\n`;
     });
     
     return result.trim();
