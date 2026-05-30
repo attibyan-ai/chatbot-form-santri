@@ -264,7 +264,7 @@ async function startBot() {
                     await replyHuman(`*INFORMASI BIAYA PESANTREN*\n\n1. Infaq Bangunan (sekali bayar): Rp 800.000\n2. Bulanan (asrama/makan/listrik/air): Rp 350.000\n\nUntuk detail lebih lanjut, silakan hubungi admin.`);
                     return;
                 case '4':
-                    await replyHuman('Untuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTempat, Tanggal Lahir : \nJenis Kelamin : \nNama Ayah : \nNama Ibu : \nAlamat : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Budi\nNama Ibu : Siti\nAlamat : Laren Bumiayu');
+                    await replyHuman('Untuk mendaftar, silakan kirim data diri Anda dengan format persis seperti di bawah ini:\n\nNama Lengkap : \nTempat, Tanggal Lahir : \nJenis Kelamin : \nNama Ayah : \nNama Ibu : \nAlamat : \n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Jamil Inayatulloh\nNama Ibu : Euis Syamsiah\nAlamat : Laren Bumiayu');
                     return;
                 case '5':
                     await replyHuman('Sedang mengambil daftar santri dari database, mohon tunggu sebentar...');
@@ -325,10 +325,10 @@ async function startBot() {
                     if (!chat.isGroup) await replyHuman('Format pengisian salah. Pastikan Anda mengisi data setelah tanda titik dua (:).');
                 }
             } else {
-                if (!chat.isGroup) await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Budi\nNama Ibu : Siti\nAlamat : Laren Bumiayu');
+                if (!chat.isGroup) await replyHuman('Format yang Anda masukkan salah. Pastikan menggunakan tanda titik dua (:) sebagai pemisah.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Jamil Inayatulloh\nNama Ibu : Euis Syamsiah\nAlamat : Laren Bumiayu');
             }
         } else if (textUpper.includes('NAMA LENGKAP') || textUpper.includes('TEMPAT, TANGGAL LAHIR') || textUpper.includes('ALAMAT')) {
-            if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tempat, Tanggal Lahir :", "Jenis Kelamin :", "Nama Ayah :", "Nama Ibu :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Budi\nNama Ibu : Siti\nAlamat : Laren Bumiayu');
+            if (!chat.isGroup) await replyHuman('Format pendaftaran belum lengkap. Pastikan Anda mengirimkan baris "Nama Lengkap :", "Tempat, Tanggal Lahir :", "Jenis Kelamin :", "Nama Ayah :", "Nama Ibu :", dan "Alamat :" dalam satu pesan yang sama.\n\nContoh:\nNama Lengkap : Ahmad Zulfikar\nTempat, Tanggal Lahir : Purwakarta, 09-12-1996\nJenis Kelamin : L\nNama Ayah : Jamil Inayatulloh\nNama Ibu : Euis Syamsiah\nAlamat : Laren Bumiayu');
         } else {
             // Fallback: Apapun pesannya (tidak dikenal/kosong), langsung berikan Menu Utama
             // Tidak perlu lagi membalas "Ketik MENU", tapi langsung sodorkan menunya
